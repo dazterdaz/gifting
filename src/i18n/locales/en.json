@@ -1,0 +1,177 @@
+{
+  "common": {
+    "appName": "Daz Giftcard Register",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "actions": "Actions",
+    "status": "Status",
+    "date": "Date",
+    "amount": "Amount",
+    "confirm": "Confirm",
+    "back": "Back",
+    "yes": "Yes",
+    "no": "No",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information",
+    "required": "This field is required",
+    "invalidEmail": "Invalid email address",
+    "invalidPhone": "Invalid phone number"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "loginError": "Invalid username or password",
+    "welcomeBack": "Welcome back"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "activeGiftcards": "Active giftcards",
+    "expiringSoon": "Expiring soon",
+    "totalGiftcards": "Total giftcards",
+    "pendingDelivery": "Pending delivery",
+    "recentActivity": "Recent activity",
+    "noRecentActivity": "No recent activity",
+    "viewAll": "View all",
+    "quickActions": "Quick actions",
+    "createGiftcard": "Create giftcard",
+    "manageUsers": "Manage users"
+  },
+  "giftcards": {
+    "title": "Giftcards",
+    "createNew": "Create new giftcard",
+    "number": "Number",
+    "buyer": "Buyer",
+    "recipient": "Recipient",
+    "amount": "Amount",
+    "creationDate": "Creation date",
+    "deliveryDate": "Delivery date",
+    "expirationDate": "Expiration date",
+    "daysLeft": "Days left",
+    "expired": "Expired",
+    "status": {
+      "created_not_delivered": "Created but not Delivered",
+      "delivered": "Delivered",
+      "redeemed": "Redeemed",
+      "cancelled": "Cancelled"
+    },
+    "tabs": {
+      "created": "Created",
+      "delivered": "Delivered",
+      "disabled": "Disabled"
+    },
+    "details": {
+      "title": "Giftcard details",
+      "buyerInfo": "Buyer information",
+      "recipientInfo": "Recipient information",
+      "statusHistory": "Status history",
+      "changeStatus": "Change status",
+      "extendExpiration": "Extend expiration",
+      "additionalNotes": "Additional notes",
+      "artist": "Artist"
+    },
+    "form": {
+      "buyerName": "Buyer name",
+      "buyerEmail": "Buyer email",
+      "buyerPhone": "Buyer WhatsApp",
+      "recipientName": "Recipient name",
+      "recipientEmail": "Recipient email",
+      "recipientPhone": "Recipient WhatsApp",
+      "amount": "Amount",
+      "prefix": "Code prefix",
+      "notes": "Additional notes",
+      "artist": "Artist name"
+    },
+    "search": {
+      "title": "Advanced search",
+      "byNumber": "By number",
+      "byCode": "By code",
+      "byEmail": "By email",
+      "byPhone": "By WhatsApp",
+      "byStatus": "By status",
+      "byDateRange": "By date range",
+      "byAmountRange": "By amount range",
+      "fromDate": "From",
+      "toDate": "To",
+      "minAmount": "Minimum amount",
+      "maxAmount": "Maximum amount",
+      "searchResults": "Search results",
+      "noResults": "No results found"
+    },
+    "public": {
+      "title": "Giftcard inquiry",
+      "enterNumber": "Enter your giftcard number",
+      "checkStatus": "Check status",
+      "result": {
+        "title": "Giftcard information",
+        "amount": "Available amount",
+        "deliveryDate": "Delivery date",
+        "expirationDate": "Expiration date",
+        "status": "Current status",
+        "notFound": "Giftcard not found"
+      }
+    },
+    "confirmations": {
+      "statusChange": "Are you sure you want to change the status to {{status}}?",
+      "statusChangeWarning": "This action cannot be undone",
+      "cancellation": "Are you sure you want to cancel this giftcard?",
+      "redemption": "Are you sure you want to mark this giftcard as redeemed?"
+    }
+  },
+  "users": {
+    "title": "User management",
+    "createNew": "Create new user",
+    "username": "Username",
+    "email": "Email",
+    "role": "Role",
+    "lastLogin": "Last login",
+    "actions": "Actions",
+    "roles": {
+      "superadmin": "Superadmin",
+      "admin": "Administrator"
+    },
+    "form": {
+      "username": "Username",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "role": "Role",
+      "passwordMismatch": "Passwords do not match"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "dashboard": "Dashboard",
+      "giftcards": "Giftcards",
+      "users": "Users",
+      "settings": "Settings"
+    },
+    "header": {
+      "profile": "Profile",
+      "settings": "Settings",
+      "logout": "Logout",
+      "darkMode": "Dark mode",
+      "lightMode": "Light mode",
+      "spanish": "Spanish",
+      "english": "English"
+    }
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "unauthorized": "You do not have permission to access this page",
+    "serverError": "Server error",
+    "goHome": "Go home"
+  }
+}

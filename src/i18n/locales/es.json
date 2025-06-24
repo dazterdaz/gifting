@@ -1,0 +1,177 @@
+{
+  "common": {
+    "appName": "Daz Giftcard Register",
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "create": "Crear",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "actions": "Acciones",
+    "status": "Estado",
+    "date": "Fecha",
+    "amount": "Monto",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "yes": "Sí",
+    "no": "No",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información",
+    "required": "Este campo es obligatorio",
+    "invalidEmail": "Correo electrónico inválido",
+    "invalidPhone": "Número de teléfono inválido"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "username": "Usuario",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su contraseña?",
+    "loginError": "Usuario o contraseña incorrectos",
+    "welcomeBack": "Bienvenido de nuevo"
+  },
+  "dashboard": {
+    "title": "Panel de control",
+    "activeGiftcards": "Tarjetas activas",
+    "expiringSoon": "Por vencer pronto",
+    "totalGiftcards": "Total de tarjetas",
+    "pendingDelivery": "Por entregar",
+    "recentActivity": "Actividad reciente",
+    "noRecentActivity": "No hay actividad reciente",
+    "viewAll": "Ver todo",
+    "quickActions": "Acciones rápidas",
+    "createGiftcard": "Crear giftcard",
+    "manageUsers": "Gestionar usuarios"
+  },
+  "giftcards": {
+    "title": "Giftcards",
+    "createNew": "Crear nueva giftcard",
+    "number": "Número",
+    "buyer": "Comprador",
+    "recipient": "Destinatario",
+    "amount": "Monto",
+    "creationDate": "Fecha de creación",
+    "deliveryDate": "Fecha de entrega",
+    "expirationDate": "Fecha de vencimiento",
+    "daysLeft": "Días restantes",
+    "expired": "Vencida",
+    "status": {
+      "created_not_delivered": "Creada pero no Entregada",
+      "delivered": "Entregada",
+      "redeemed": "Cobrada",
+      "cancelled": "Anulada"
+    },
+    "tabs": {
+      "created": "Creadas",
+      "delivered": "Entregadas",
+      "disabled": "Inhabilitadas"
+    },
+    "details": {
+      "title": "Detalles de la giftcard",
+      "buyerInfo": "Información del comprador",
+      "recipientInfo": "Información del destinatario",
+      "statusHistory": "Historial de estados",
+      "changeStatus": "Cambiar estado",
+      "extendExpiration": "Extender vencimiento",
+      "additionalNotes": "Notas adicionales",
+      "artist": "Artista"
+    },
+    "form": {
+      "buyerName": "Nombre del comprador",
+      "buyerEmail": "Correo del comprador",
+      "buyerPhone": "WhatsApp del comprador",
+      "recipientName": "Nombre del destinatario",
+      "recipientEmail": "Correo del destinatario",
+      "recipientPhone": "WhatsApp del destinatario",
+      "amount": "Monto de carga",
+      "prefix": "Prefijo del código",
+      "notes": "Notas adicionales",
+      "artist": "Nombre del artista"
+    },
+    "search": {
+      "title": "Búsqueda avanzada",
+      "byNumber": "Por número",
+      "byCode": "Por código",
+      "byEmail": "Por correo electrónico",
+      "byPhone": "Por WhatsApp",
+      "byStatus": "Por estado",
+      "byDateRange": "Por rango de fechas",
+      "byAmountRange": "Por rango de monto",
+      "fromDate": "Desde",
+      "toDate": "Hasta",
+      "minAmount": "Monto mínimo",
+      "maxAmount": "Monto máximo",
+      "searchResults": "Resultados de búsqueda",
+      "noResults": "No se encontraron resultados"
+    },
+    "public": {
+      "title": "Consulta de giftcard",
+      "enterNumber": "Ingrese el número de su giftcard",
+      "checkStatus": "Consultar estado",
+      "result": {
+        "title": "Información de la giftcard",
+        "amount": "Monto disponible",
+        "deliveryDate": "Fecha de entrega",
+        "expirationDate": "Fecha de vencimiento",
+        "status": "Estado actual",
+        "notFound": "Giftcard no encontrada"
+      }
+    },
+    "confirmations": {
+      "statusChange": "¿Está seguro que desea cambiar el estado a {{status}}?",
+      "statusChangeWarning": "Esta acción no se puede deshacer",
+      "cancellation": "¿Está seguro que desea anular esta giftcard?",
+      "redemption": "¿Está seguro que desea marcar esta giftcard como cobrada?"
+    }
+  },
+  "users": {
+    "title": "Gestión de usuarios",
+    "createNew": "Crear nuevo usuario",
+    "username": "Nombre de usuario",
+    "email": "Correo electrónico",
+    "role": "Rol",
+    "lastLogin": "Último acceso",
+    "actions": "Acciones",
+    "roles": {
+      "superadmin": "Superadmin",
+      "admin": "Administrador"
+    },
+    "form": {
+      "username": "Nombre de usuario",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "role": "Rol",
+      "passwordMismatch": "Las contraseñas no coinciden"
+    }
+  },
+  "layout": {
+    "sidebar": {
+      "dashboard": "Panel de control",
+      "giftcards": "Giftcards",
+      "users": "Usuarios",
+      "settings": "Configuración"
+    },
+    "header": {
+      "profile": "Perfil",
+      "settings": "Configuración",
+      "logout": "Cerrar sesión",
+      "darkMode": "Modo oscuro",
+      "lightMode": "Modo claro",
+      "spanish": "Español",
+      "english": "Inglés"
+    }
+  },
+  "errors": {
+    "notFound": "Página no encontrada",
+    "unauthorized": "No tiene permiso para acceder a esta página",
+    "serverError": "Error del servidor",
+    "goHome": "Ir al inicio"
+  }
+}
