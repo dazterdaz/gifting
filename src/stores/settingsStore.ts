@@ -90,8 +90,8 @@ const convertSettingsToFirestore = (settings: SiteSettings) => {
 
 // Convertir documento de Firestore a configuración
 const convertFirestoreToSettings = (data: any): SiteSettings => {
-  if (data.terms?.createdAt) {
-    data.terms.createdAt = data.terms.createdAt?.toDate?.()?.toISOString() || data.terms.createdAt;
+  if (data.terms?.createdAt && typeof data.terms.createdAt.toDate === 'function') {
+    data.terms.createdAt = data.terms.createdAt.toDate().toISOString();
   }
   
   return data;
