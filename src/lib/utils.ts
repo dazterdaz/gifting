@@ -13,7 +13,12 @@ export function cn(...inputs: ClassValue[]) {
 
 // Format dates with localization
 export function formatDate(date: string | Date, formatStr = 'dd/MM/yyyy', locale = 'es'): string {
-  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+const dateObj = typeof date?.toDate === 'function'
+  ? date.toDate()
+  : typeof date === 'string'
+    ? parseISO(date)
+    : date;
+
   return format(dateObj, formatStr, { locale: locale === 'es' ? es : enUS });
 }
 
