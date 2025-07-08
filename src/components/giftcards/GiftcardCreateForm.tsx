@@ -49,12 +49,7 @@ const GiftcardCreateForm: React.FC = () => {
   const onSubmit = async (data: GiftcardFormValues) => {
     if (!user) return;
     
-    console.log('📝 Enviando formulario de giftcard:', {
-      buyer: data.buyerName,
-      recipient: data.recipientName,
-      amount: data.amount,
-      duration: data.duration
-    });
+    console.log('📝 Creando nueva tarjeta de regalo...');
     
     setIsSubmitting(true);
     try {
@@ -73,11 +68,9 @@ const GiftcardCreateForm: React.FC = () => {
         duration: data.duration ? parseInt(data.duration.toString()) : 90
       };
       
-      console.log('🎫 Datos preparados para crear giftcard:', giftcardData);
-      
       const newGiftcard = await createGiftcard(giftcardData);
       
-      console.log('✅ Giftcard creada exitosamente:', newGiftcard.number);
+      console.log('✅ Tarjeta de regalo creada exitosamente');
       
       // Intentar registrar actividad, pero no fallar si hay error
       try {
@@ -90,7 +83,7 @@ const GiftcardCreateForm: React.FC = () => {
           details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration || 90} días`
         });
       } catch (activityError) {
-        console.warn('⚠️ Error registrando actividad (no crítico):', activityError);
+        console.warn('⚠️ Error registrando actividad:', activityError);
       }
       
       toast.success(t('common.success'), {

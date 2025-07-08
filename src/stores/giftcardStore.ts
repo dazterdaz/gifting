@@ -147,15 +147,15 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         const giftcardsRef = collection(db, 'giftcards');
         const querySnapshot = await getDocs(giftcardsRef);
         existingNumbers = querySnapshot.docs.map(doc => doc.data().number || '');
-        console.log('📋 Números existentes obtenidos:', existingNumbers.length);
+        console.log('📋 Verificando números existentes...');
       } catch (fetchError) {
-        console.error('❌ Error obteniendo números existentes:', fetchError);
+        console.error('❌ Error verificando números existentes:', fetchError);
         throw new Error('No se pueden obtener los números existentes para generar uno único');
       }
       
       // Generar número único
       const uniqueNumber = generateGiftcardNumber(existingNumbers);
-      console.log('🔢 Número generado:', uniqueNumber);
+      console.log('🔢 Número único generado');
       
       const newGiftcard: Omit<Giftcard, 'id'> = {
         number: uniqueNumber,
@@ -166,17 +166,13 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         createdAt: new Date().toISOString(),
       };
       
-      console.log('🎫 Nueva giftcard preparada:', {
-        number: newGiftcard.number,
-        amount: newGiftcard.amount,
-        status: newGiftcard.status
-      });
+      console.log('🎫 Preparando tarjeta de regalo...');
       
       // Convertir a formato Firestore y guardar
       const giftcardsRef = collection(db, 'giftcards');
       const firestoreData = convertGiftcardToFirestore(newGiftcard);
       
-      console.log('💾 Guardando en Firebase...');
+      console.log('💾 Guardando tarjeta...');
       const docRef = await addDoc(giftcardsRef, firestoreData);
       
       const createdGiftcard: Giftcard = {
@@ -184,7 +180,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         id: docRef.id
       };
       
-      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
+      console.log('✅ Tarjeta creada exitosamente');
       
       // Actualizar estado local
       set(state => ({ 
@@ -196,7 +192,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       return createdGiftcard;
       
     } catch (error) {
-      console.error('❌ Error creando giftcard en Firebase:', error);
+      console.error('❌ Error creando tarjeta de regalo:', error);
       set({ error: 'Error al crear la tarjeta de regalo', loading: false });
       throw error;
     }

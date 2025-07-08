@@ -12,7 +12,7 @@ import { useActivityStore } from '../stores/activityStore';
 import { User, LoginCredentials } from '../types';
 
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
-  console.log('🔐 Iniciando proceso de login con Firebase Auth...');
+  console.log('🔐 Iniciando proceso de autenticación...');
   
   try {
     // Convertir username a email si es necesario
@@ -22,20 +22,18 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
       if (usernameOrEmail.toLowerCase() === 'demian') {
         email = 'demian.83@hotmail.es';
       } else {
-        console.log('❌ Usuario no reconocido:', usernameOrEmail);
+        console.log('❌ Usuario no encontrado');
         return null;
       }
     }
     
-    console.log('🔍 Intentando autenticar con email:', email);
-    console.log('🔑 Usando contraseña:', password ? '***' : 'NO PASSWORD');
+    console.log('🔍 Verificando credenciales...');
     
     // Autenticar con Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
     
-    console.log('✅ Autenticación exitosa con Firebase Auth');
-    console.log('👤 UID de Firebase:', firebaseUser.uid);
+    console.log('✅ Autenticación exitosa');
     
     // Obtener datos adicionales del usuario desde Firestore
     try {
@@ -55,8 +53,8 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
         };
         console.log('✅ Datos de usuario obtenidos de Firestore');
       } else {
-        // Si no existe el documento, crear uno por defecto
-        console.log('⚠️ Usuario no encontrado en Firestore, creando documento...');
+        // Si no existe el documento, crear uno
+        console.log('📝 Creando perfil de usuario...');
         
         userData = {
           id: firebaseUser.uid,
@@ -78,20 +76,19 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
           });
           console.log('✅ Documento de usuario creado en Firestore');
         } catch (createDocError) {
-          console.warn('⚠️ No se pudo crear documento en Firestore:', createDocError);
+          console.warn('⚠️ Error creando perfil de usuario:', createDocError);
         }
       }
       
       // Obtener token de Firebase
       const token = await firebaseUser.getIdToken();
       
-      console.log('🎫 Token de Firebase obtenido');
-      console.log('👤 Usuario autenticado:', userData);
+      console.log('✅ Sesión iniciada correctamente');
       
       return { user: userData, token };
       
     } catch (firestoreError) {
-      console.error('❌ Error obteniendo datos de Firestore:', firestoreError);
+      console.error('❌ Error obteniendo datos del usuario:', firestoreError);
       
       // Como fallback, usar datos básicos de Firebase Auth
       const userData: User = {
@@ -104,14 +101,12 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
       
       const token = await firebaseUser.getIdToken();
       
-      console.log('🔄 Usando datos básicos de Firebase Auth como fallback');
+      console.log('🔄 Usando datos básicos como respaldo');
       return { user: userData, token };
     }
     
   } catch (error) {
     console.error('❌ Error en autenticación:', error);
-    console.error('❌ Código de error:', error.code);
-    console.error('❌ Mensaje de error:', error.message);
     
     // Si es error de credenciales inválidas
     if (
@@ -125,7 +120,7 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
     }
     
     // Para otros errores, también retornar null
-    console.log('❌ Error de autenticación:', error.code);
+    console.log('❌ Error de autenticación');
     return null;
   }
 };
