@@ -51,6 +51,12 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
 
+    // Configuración específica del sitio - lectura pública
+    match /settings/site-config {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
     // Términos y condiciones - lectura pública, escritura solo superadmin
     match /terms/{termId} {
       allow read: if true; // Lectura pública para la consulta de giftcards

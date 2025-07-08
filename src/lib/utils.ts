@@ -13,13 +13,37 @@ export function cn(...inputs: ClassValue[]) {
 
 // Format dates with localization
 export function formatDate(date: string | Date, formatStr = 'dd/MM/yyyy', locale = 'es'): string {
-const dateObj = typeof date?.toDate === 'function'
-  ? date.toDate()
-  : typeof date === 'string'
-    ? parseISO(date)
-    : date;
+  try {
+    let dateObj: Date;
+    
+    if (typeof date?.toDate === 'function') {
+      // Es un Timestamp de Firestore
+      dateObj = date.toDate();
+    } else if (typeof date === 'string') {
+      // Es una cadena de fecha
+      dateObj = parseISO(date);
+      // Verificar si la fecha es válida
+      if (isNaN(dateObj.getTime())) {
+        console.warn('⚠️ Fecha inválida recibida:', date);
+        return 'Fecha inválida';
+      }
+    } else if (date instanceof Date) {
+      // Ya es un objeto Date
+      dateObj = date;
+      if (isNaN(dateObj.getTime())) {
+        console.warn('⚠️ Objeto Date inválido:', date);
+        return 'Fecha inválida';
+      }
+    } else {
+      console.warn('⚠️ Tipo de fecha no reconocido:', typeof date, date);
+      return 'Fecha inválida';
+    }
 
-  return format(dateObj, formatStr, { locale: locale === 'es' ? es : enUS });
+    return format(dateObj, formatStr, { locale: locale === 'es' ? es : enUS });
+  } catch (error) {
+    console.error('❌ Error formateando fecha:', error, 'Fecha original:', date);
+    return 'Error en fecha';
+  }
 }
 
 // Format currency for Chilean pesos

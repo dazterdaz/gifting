@@ -90,8 +90,60 @@ const convertSettingsToFirestore = (settings: SiteSettings) => {
 
 // Convertir documento de Firestore a configuración
 const convertFirestoreToSettings = (data: any): SiteSettings => {
-  if (data.terms?.createdAt && typeof data.terms.createdAt.toDate === 'function') {
-    data.terms.createdAt = data.terms.createdAt.toDate().toISOString();
+  // Manejar conversión segura de fechas
+  if (data.terms?.createdAt) {
+    try {
+      if (typeof data.terms.createdAt.toDate === 'function') {
+        // Es un Timestamp de Firestore
+        data.terms.createdAt = data.terms.createdAt.toDate().toISOString();
+      } else if (typeof data.terms.createdAt === 'string') {
+        // Es una cadena, verificar si es válida
+        const parsedDate = new Date(data.terms.createdAt);
+        if (isNaN(parsedDate.getTime())) {
+          // Fecha inválida, usar fecha actual
+          data.terms.createdAt = new Date().toISOString();
+        }
+      } else {
+        // Tipo desconocido, usar fecha actual
+        data.terms.createdAt = new Date().toISOString();
+      }
+    } catch (error) {
+      console.warn('⚠️ Error convirtiendo fecha de términos, usando fecha actual:', error);
+      data.terms.createdAt = new Date().toISOString();
+    }
+  }
+
+  // Manejar otras fechas si existen
+  if (data.createdAt) {
+    try {
+      if (typeof data.createdAt.toDate === 'function') {
+        data.createdAt = data.createdAt.toDate().toISOString();
+      } else if (typeof data.createdAt === 'string') {
+        const parsedDate = new Date(data.createdAt);
+        if (isNaN(parsedDate.getTime())) {
+          data.createdAt = new Date().toISOString();
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error convirtiendo createdAt:', error);
+      data.createdAt = new Date().toISOString();
+    }
+  }
+
+  if (data.updatedAt) {
+    try {
+      if (typeof data.updatedAt.toDate === 'function') {
+        data.updatedAt = data.updatedAt.toDate().toISOString();
+      } else if (typeof data.updatedAt === 'string') {
+        const parsedDate = new Date(data.updatedAt);
+        if (isNaN(parsedDate.getTime())) {
+          data.updatedAt = new Date().toISOString();
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Error convirtiendo updatedAt:', error);
+      data.updatedAt = new Date().toISOString();
+    }
   }
   
   return data;
@@ -120,14 +172,42 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       const docSnap = await getDoc(docRef);
       
       if (docSnap.exists()) {
-        const settings = convertFirestoreToSettings(docSnap.data());
+        const rawData = docSnap.data();
+        console.log('📄 Datos crudos de Firebase:', rawData);
+        
+        const settings = convertFirestoreToSettings(rawData);
         console.log('✅ Configuración cargada desde Firebase');
         set({ settings, loading: false });
       } else {
         // Si no existe, crear configuración por defecto
         console.log('📝 Creando configuración por defecto en Firebase...');
-        const firestoreData = convertSettingsToFirestore(defaultSettings);
-        await setDoc(docRef, firestoreData);
+        
+        try {
+          const firestoreData = convertSettingsToFirestore(defaultSettings);
+          await setDoc(docRef, firestoreData);
+          console.log('✅ Configuración por defecto creada en Firebase');
+          set({ settings: defaultSettings, loading: false });
+        } catch (createError) {
+          console.warn('⚠️ No se pudo crear configuración en Firebase, usando configuración local:', createError);
+          set({ settings: defaultSettings, loading: false });
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error cargando configuración desde Firebase:', error);
+      
+      // Si hay error de permisos o conexión, usar configuración por defecto
+      if (error.code === 'permission-denied' || error.code === 'unavailable') {
+        console.log('🔄 Usando configuración por defecto debido a problemas de conexión/permisos');
+        set({ settings: defaultSettings, loading: false, error: null });
+      } else {
+        set({ 
+          error: 'Error al cargar la configuración', 
+          loading: false,
+          settings: defaultSettings // Usar configuración por defecto como fallback
+        });
+      }
+    }
+  },
         console.log('✅ Configuración por defecto creada en Firebase');
         set({ settings: defaultSettings, loading: false });
       }
