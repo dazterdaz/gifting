@@ -1,39 +1,6 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit as firestoreLimit,
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { dbService } from '../lib/database';
 import { ActivityLog } from '../types';
-
-// Convertir documento de Firestore a ActivityLog
-const convertFirestoreToActivity = (doc: any): ActivityLog => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp,
-  };
-};
-
-// Convertir ActivityLog a formato Firestore
-const convertActivityToFirestore = (activity: Partial<ActivityLog>) => {
-  const data = { ...activity };
-  
-  if (data.timestamp) {
-    data.timestamp = Timestamp.fromDate(new Date(data.timestamp));
-  }
-  
-  delete data.id;
-  return data;
-};
 
 interface ActivityState {
   activities: ActivityLog[];
@@ -48,6 +15,18 @@ interface ActivityState {
   getFilteredActivities: (date?: string, userId?: string) => ActivityLog[];
   clearTodayActivities: () => void;
 }
+
+// Convertir datos de base de datos a formato de la aplicación
+const convertDbToActivity = (dbData: any): ActivityLog => ({
+  id: dbData.id,
+  userId: dbData.user_id,
+  username: dbData.username,
+  action: dbData.action,
+  targetType: dbData.target_type,
+  targetId: dbData.target_id,
+  details: dbData.details,
+  timestamp: dbData.timestamp
+});
 
 const isSameDay = (date1: string, date2: string) => {
   const d1 = new Date(date1);
@@ -64,72 +43,56 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
   error: null,
   
   fetchActivities: async () => {
-    console.log('📊 Cargando actividades desde Firebase...');
+    console.log('📊 Cargando actividades desde base de datos...');
     set({ loading: true, error: null });
     
     try {
-      const activitiesRef = collection(db, 'activities');
-      const q = query(activitiesRef, orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
+      const dbActivities = await dbService.activities.getAll();
+      const activities = dbActivities.map(convertDbToActivity);
       
-      const activities = querySnapshot.docs.map(convertFirestoreToActivity);
-      
-      console.log('✅ Actividades cargadas desde Firebase:', activities.length);
+      console.log('✅ Actividades cargadas desde base de datos:', activities.length);
       
       set({ activities, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando actividades desde Firebase:', error);
+      console.error('❌ Error cargando actividades desde base de datos:', error);
       set({ error: 'Error al cargar las actividades', loading: false });
     }
   },
   
   fetchRecentActivities: async (limitCount = 5) => {
-    console.log('📊 Cargando actividades recientes desde Firebase...');
+    console.log('📊 Cargando actividades recientes desde base de datos...');
     set({ loading: true, error: null });
     
     try {
-      const activitiesRef = collection(db, 'activities');
-      const q = query(
-        activitiesRef, 
-        orderBy('timestamp', 'desc'), 
-        firestoreLimit(limitCount)
-      );
-      const querySnapshot = await getDocs(q);
+      const dbActivities = await dbService.activities.getRecent(limitCount);
+      const recentActivities = dbActivities.map(convertDbToActivity);
       
-      const recentActivities = querySnapshot.docs.map(convertFirestoreToActivity);
-      
-      console.log('✅ Actividades recientes cargadas desde Firebase:', recentActivities.length);
+      console.log('✅ Actividades recientes cargadas desde base de datos:', recentActivities.length);
       
       set({ 
         recentActivities, 
         loading: false 
       });
     } catch (error) {
-      console.error('❌ Error cargando actividades recientes desde Firebase:', error);
+      console.error('❌ Error cargando actividades recientes desde base de datos:', error);
       set({ error: 'Error al cargar actividades recientes', loading: false });
     }
   },
   
   logActivity: async (activity: Omit<ActivityLog, 'id' | 'timestamp'>) => {
-    console.log('📝 Registrando actividad en Firebase:', activity.action);
+    console.log('📝 Registrando actividad en base de datos:', activity.action);
     
     try {
-      const newActivity: Omit<ActivityLog, 'id'> = {
+      await dbService.activities.create(activity);
+      
+      console.log('✅ Actividad registrada en base de datos:', activity.details);
+      
+      // Crear objeto completo para el estado local
+      const activityWithId: ActivityLog = {
         ...activity,
+        id: Math.random().toString(36).substring(2, 15),
         timestamp: new Date().toISOString()
       };
-      
-      // Guardar en Firebase
-      const activitiesRef = collection(db, 'activities');
-      const firestoreData = convertActivityToFirestore(newActivity);
-      const docRef = await addDoc(activitiesRef, firestoreData);
-      
-      const activityWithId: ActivityLog = {
-        ...newActivity,
-        id: docRef.id
-      };
-      
-      console.log('✅ Actividad registrada en Firebase:', activityWithId.details);
       
       // Actualizar estado local
       set(state => ({
@@ -137,7 +100,7 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
         recentActivities: [activityWithId, ...state.recentActivities].slice(0, 5)
       }));
     } catch (error) {
-      console.error('❌ Error registrando actividad en Firebase:', error);
+      console.error('❌ Error registrando actividad en base de datos:', error);
     }
   },
   
@@ -163,6 +126,6 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
   
   clearTodayActivities: () => {
     console.log('🧹 Limpiando actividades del día');
-    // Esta función mantiene las actividades para persistencia en Firebase
+    // Esta función mantiene las actividades para persistencia en base de datos
   }
 }));

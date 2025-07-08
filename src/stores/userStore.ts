@@ -1,41 +1,6 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  setDoc, 
-  query, 
-  orderBy, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { dbService } from '../lib/database';
 import { User } from '../types';
-
-// Convertir documento de Firestore a User
-const convertFirestoreToUser = (doc: any): User => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    lastLogin: data.lastLogin?.toDate?.()?.toISOString() || data.lastLogin,
-  };
-};
-
-// Convertir User a formato Firestore
-const convertUserToFirestore = (user: Partial<User>) => {
-  const data = { ...user };
-  
-  if (data.lastLogin) {
-    data.lastLogin = Timestamp.fromDate(new Date(data.lastLogin));
-  }
-  
-  delete data.id;
-  return data;
-};
 
 interface UserState {
   users: User[];
@@ -51,6 +16,15 @@ interface UserState {
   initializeDefaultUser: () => Promise<void>;
 }
 
+// Convertir datos de base de datos a formato de la aplicación
+const convertDbToUser = (dbData: any): User => ({
+  id: dbData.id,
+  username: dbData.username,
+  email: dbData.email,
+  role: dbData.role,
+  lastLogin: dbData.last_login
+});
+
 export const useUserStore = create<UserState>()((set, get) => ({
   users: [],
   selectedUser: null,
@@ -58,17 +32,14 @@ export const useUserStore = create<UserState>()((set, get) => ({
   error: null,
   
   fetchUsers: async () => {
-    console.log('👥 Cargando usuarios desde Firebase...');
+    console.log('👥 Cargando usuarios desde base de datos...');
     set({ loading: true, error: null });
     
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('username', 'asc'));
-      const querySnapshot = await getDocs(q);
+      const dbUsers = await dbService.users.getAll();
+      const users = dbUsers.map(convertDbToUser);
       
-      const users = querySnapshot.docs.map(convertFirestoreToUser);
-      
-      console.log('✅ Usuarios cargados desde Firebase:', users.length);
+      console.log('✅ Usuarios cargados desde base de datos:', users.length);
       
       // Si no hay usuarios, crear el usuario por defecto
       if (users.length === 0) {
@@ -78,28 +49,22 @@ export const useUserStore = create<UserState>()((set, get) => ({
       
       set({ users, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando usuarios desde Firebase:', error);
+      console.error('❌ Error cargando usuarios desde base de datos:', error);
       
-      // Si hay error de permisos, intentar crear usuario por defecto
-      if (error.code === 'permission-denied') {
-        console.log('🔄 Intentando crear usuario por defecto debido a permisos...');
-        await get().initializeDefaultUser();
-      } else {
-        set({ error: 'Error al cargar los usuarios', loading: false });
-      }
+      // Intentar crear usuario por defecto como fallback
+      console.log('🔄 Intentando crear usuario por defecto debido a error...');
+      await get().initializeDefaultUser();
     }
   },
   
   getUserById: async (id: string) => {
-    console.log('🔍 Buscando usuario en Firebase:', id);
+    console.log('🔍 Buscando usuario en base de datos:', id);
     set({ loading: true, error: null });
     
     try {
-      const docRef = doc(db, 'users', id);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const user = convertFirestoreToUser(docSnap);
+      const dbUser = await dbService.users.getById(id);
+      if (dbUser) {
+        const user = convertDbToUser(dbUser);
         console.log('👤 Usuario encontrado:', user.username);
         set({ selectedUser: user, loading: false });
       } else {
@@ -107,86 +72,68 @@ export const useUserStore = create<UserState>()((set, get) => ({
         set({ selectedUser: null, loading: false });
       }
     } catch (error) {
-      console.error('❌ Error buscando usuario en Firebase:', error);
+      console.error('❌ Error buscando usuario en base de datos:', error);
       set({ error: 'Error al cargar los detalles del usuario', loading: false });
     }
   },
   
   createUser: async (userData: Partial<User> & { password: string }) => {
-    console.log('➕ Creando nuevo usuario en Firebase...');
+    console.log('➕ Creando nuevo usuario en base de datos...');
     set({ loading: true, error: null });
     
     try {
-      const newUser: Omit<User, 'id'> = {
-        username: userData.username!,
-        email: userData.email!,
-        role: userData.role || 'admin',
-        lastLogin: new Date().toISOString()
-      };
+      const dbUser = await dbService.users.create(userData);
+      const newUser = convertDbToUser(dbUser);
       
-      // Guardar en Firebase
-      const usersRef = collection(db, 'users');
-      const firestoreData = convertUserToFirestore(newUser);
-      const docRef = await addDoc(usersRef, firestoreData);
-      
-      const createdUser: User = {
-        ...newUser,
-        id: docRef.id
-      };
-      
-      console.log('✅ Usuario creado en Firebase:', createdUser.username);
+      console.log('✅ Usuario creado en base de datos:', newUser.username);
       
       // Actualizar estado local
       set(state => ({ 
-        users: [...state.users, createdUser],
+        users: [...state.users, newUser],
         loading: false 
       }));
       
-      return createdUser;
+      return newUser;
     } catch (error) {
-      console.error('❌ Error creando usuario en Firebase:', error);
+      console.error('❌ Error creando usuario en base de datos:', error);
       set({ error: 'Error al crear el usuario', loading: false });
       throw error;
     }
   },
   
   updateUser: async (id: string, userData: Partial<User>) => {
-    console.log('🔄 Actualizando usuario en Firebase:', id);
+    console.log('🔄 Actualizando usuario en base de datos:', id);
     set({ loading: true, error: null });
     
     try {
-      // Actualizar en Firebase
-      const docRef = doc(db, 'users', id);
-      const firestoreData = convertUserToFirestore(userData);
-      await updateDoc(docRef, firestoreData);
+      const dbUser = await dbService.users.update(id, userData);
+      const updatedUser = convertDbToUser(dbUser);
       
-      console.log('✅ Usuario actualizado en Firebase');
+      console.log('✅ Usuario actualizado en base de datos');
       
       // Actualizar estado local
       set(state => ({
         users: state.users.map(user => 
-          user.id === id ? { ...user, ...userData } : user
+          user.id === id ? updatedUser : user
         ),
-        selectedUser: state.selectedUser?.id === id ? { ...state.selectedUser, ...userData } : state.selectedUser,
+        selectedUser: state.selectedUser?.id === id ? updatedUser : state.selectedUser,
         loading: false
       }));
     } catch (error) {
-      console.error('❌ Error actualizando usuario en Firebase:', error);
+      console.error('❌ Error actualizando usuario en base de datos:', error);
       set({ error: 'Error al actualizar el usuario', loading: false });
       throw error;
     }
   },
   
   deleteUser: async (id: string) => {
-    console.log('🗑️ Eliminando usuario de Firebase:', id);
+    console.log('🗑️ Eliminando usuario de base de datos:', id);
     set({ loading: true, error: null });
     
     try {
-      // Eliminar de Firebase
-      const docRef = doc(db, 'users', id);
-      await deleteDoc(docRef);
+      await dbService.users.delete(id);
       
-      console.log('✅ Usuario eliminado de Firebase');
+      console.log('✅ Usuario eliminado de base de datos');
       
       // Actualizar estado local
       set(state => {
@@ -200,51 +147,43 @@ export const useUserStore = create<UserState>()((set, get) => ({
         };
       });
     } catch (error) {
-      console.error('❌ Error eliminando usuario de Firebase:', error);
+      console.error('❌ Error eliminando usuario de base de datos:', error);
       set({ error: 'Error al eliminar el usuario', loading: false });
       throw error;
     }
   },
 
   initializeDefaultUser: async () => {
-    console.log('🔧 Inicializando usuario por defecto en Firebase...');
+    console.log('🔧 Inicializando usuario por defecto en base de datos...');
     set({ loading: true, error: null });
     
     try {
-      // Primero verificar si el usuario ya existe
-      const docRef = doc(db, 'users', 'admin-demian');
-      const docSnap = await getDoc(docRef);
+      // Verificar si el usuario ya existe
+      const existingUser = await dbService.users.getById('admin-demian');
       
-      if (docSnap.exists()) {
-        // El usuario ya existe, simplemente cargarlo
-        const existingUser = convertFirestoreToUser(docSnap);
-        console.log('✅ Usuario por defecto ya existe en Firebase, cargando...');
-        set({ users: [existingUser], loading: false });
+      if (existingUser) {
+        const user = convertDbToUser(existingUser);
+        console.log('✅ Usuario por defecto ya existe en base de datos, cargando...');
+        set({ users: [user], loading: false });
         return;
       }
       
       // El usuario no existe, crearlo
-      const defaultUser: Omit<User, 'id'> = {
+      const defaultUserData = {
         username: 'demian',
         email: 'demian.83@hotmail.es',
-        role: 'superadmin',
-        lastLogin: new Date().toISOString()
+        password: '@Llamasami1',
+        role: 'superadmin' as const
       };
       
-      // Crear en Firebase con ID específico (solo si no existe)
-      const firestoreData = convertUserToFirestore(defaultUser);
-      await setDoc(docRef, firestoreData);
+      const dbUser = await dbService.users.create(defaultUserData);
+      const createdUser = convertDbToUser(dbUser);
       
-      const createdUser: User = {
-        ...defaultUser,
-        id: 'admin-demian'
-      };
-      
-      console.log('✅ Usuario por defecto creado en Firebase');
+      console.log('✅ Usuario por defecto creado en base de datos');
       
       set({ users: [createdUser], loading: false });
     } catch (error) {
-      console.error('❌ Error inicializando usuario por defecto en Firebase:', error);
+      console.error('❌ Error inicializando usuario por defecto en base de datos:', error);
       
       // Como fallback, usar datos locales temporalmente
       const defaultUser: User = {

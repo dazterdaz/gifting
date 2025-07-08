@@ -1,12 +1,5 @@
 import { create } from 'zustand';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { dbService } from '../lib/database';
 import { SiteSettings, TermsAndConditions } from '../types';
 
 // Términos y condiciones por defecto
@@ -77,78 +70,6 @@ const defaultSettings: SiteSettings = {
   ]
 };
 
-// Convertir configuración a formato Firestore
-const convertSettingsToFirestore = (settings: SiteSettings) => {
-  const data = { ...settings };
-  
-  if (data.terms?.createdAt) {
-    data.terms.createdAt = Timestamp.fromDate(new Date(data.terms.createdAt));
-  }
-  
-  return data;
-};
-
-// Convertir documento de Firestore a configuración
-const convertFirestoreToSettings = (data: any): SiteSettings => {
-  // Manejar conversión segura de fechas
-  if (data.terms?.createdAt) {
-    try {
-      if (typeof data.terms.createdAt.toDate === 'function') {
-        // Es un Timestamp de Firestore
-        data.terms.createdAt = data.terms.createdAt.toDate().toISOString();
-      } else if (typeof data.terms.createdAt === 'string') {
-        // Es una cadena, verificar si es válida
-        const parsedDate = new Date(data.terms.createdAt);
-        if (isNaN(parsedDate.getTime())) {
-          // Fecha inválida, usar fecha actual
-          data.terms.createdAt = new Date().toISOString();
-        }
-      } else {
-        // Tipo desconocido, usar fecha actual
-        data.terms.createdAt = new Date().toISOString();
-      }
-    } catch (error) {
-      console.warn('⚠️ Error convirtiendo fecha de términos, usando fecha actual:', error);
-      data.terms.createdAt = new Date().toISOString();
-    }
-  }
-
-  // Manejar otras fechas si existen
-  if (data.createdAt) {
-    try {
-      if (typeof data.createdAt.toDate === 'function') {
-        data.createdAt = data.createdAt.toDate().toISOString();
-      } else if (typeof data.createdAt === 'string') {
-        const parsedDate = new Date(data.createdAt);
-        if (isNaN(parsedDate.getTime())) {
-          data.createdAt = new Date().toISOString();
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Error convirtiendo createdAt:', error);
-      data.createdAt = new Date().toISOString();
-    }
-  }
-
-  if (data.updatedAt) {
-    try {
-      if (typeof data.updatedAt.toDate === 'function') {
-        data.updatedAt = data.updatedAt.toDate().toISOString();
-      } else if (typeof data.updatedAt === 'string') {
-        const parsedDate = new Date(data.updatedAt);
-        if (isNaN(parsedDate.getTime())) {
-          data.updatedAt = new Date().toISOString();
-        }
-      }
-    } catch (error) {
-      console.warn('⚠️ Error convirtiendo updatedAt:', error);
-      data.updatedAt = new Date().toISOString();
-    }
-  }
-  
-  return data;
-};
-
 interface SettingsState {
   settings: SiteSettings;
   loading: boolean;
@@ -158,78 +79,98 @@ interface SettingsState {
   fetchSettings: () => Promise<void>;
 }
 
+// Convertir datos de base de datos a formato de la aplicación
+const convertDbToSettings = (dbData: any, terms?: any): SiteSettings => ({
+  siteName: dbData.site_name || defaultSettings.siteName,
+  logoUrl: dbData.logo_url || defaultSettings.logoUrl,
+  logoColor: dbData.logo_color || defaultSettings.logoColor,
+  terms: terms || defaultSettings.terms,
+  contactInfo: {
+    phone: dbData.contact_phone || defaultSettings.contactInfo?.phone || '',
+    whatsapp: dbData.contact_whatsapp || defaultSettings.contactInfo?.whatsapp || '',
+    email: dbData.contact_email || defaultSettings.contactInfo?.email || '',
+    address: dbData.contact_address || defaultSettings.contactInfo?.address || ''
+  },
+  testimonials: defaultSettings.testimonials, // Por ahora usar los por defecto
+  socialLinks: defaultSettings.socialLinks // Por ahora usar los por defecto
+});
+
 export const useSettingsStore = create<SettingsState>()((set, get) => ({
   settings: defaultSettings,
   loading: false,
   error: null,
 
   fetchSettings: async () => {
-    console.log('⚙️ Cargando configuración desde Firebase...');
+    console.log('⚙️ Cargando configuración desde base de datos...');
     set({ loading: true, error: null });
     
     try {
-      const docRef = doc(db, 'settings', 'site-config');
-      const docSnap = await getDoc(docRef);
+      const dbSettings = await dbService.settings.get();
+      const dbTerms = await dbService.terms.getActive();
       
-      if (docSnap.exists()) {
-        const rawData = docSnap.data();
-        console.log('📄 Datos crudos de Firebase:', rawData);
-        
-        const settings = convertFirestoreToSettings(rawData);
-        console.log('✅ Configuración cargada desde Firebase');
+      if (dbSettings) {
+        const settings = convertDbToSettings(dbSettings, dbTerms);
+        console.log('✅ Configuración cargada desde base de datos');
         set({ settings, loading: false });
       } else {
-        // Si no existe, crear configuración por defecto
-        console.log('📝 Creando configuración por defecto en Firebase...');
-        
-        try {
-          const firestoreData = convertSettingsToFirestore(defaultSettings);
-          await setDoc(docRef, firestoreData);
-          console.log('✅ Configuración por defecto creada en Firebase');
-          set({ settings: defaultSettings, loading: false });
-        } catch (createError) {
-          console.warn('⚠️ No se pudo crear configuración en Firebase, usando configuración local:', createError);
-          set({ settings: defaultSettings, loading: false });
-        }
+        // Si no existe, usar configuración por defecto
+        console.log('📝 Usando configuración por defecto');
+        set({ settings: defaultSettings, loading: false });
       }
     } catch (error) {
-      console.error('❌ Error cargando configuración desde Firebase:', error);
+      console.error('❌ Error cargando configuración desde base de datos:', error);
       
-      // Si hay error de permisos o conexión, usar configuración por defecto
-      if (error.code === 'permission-denied' || error.code === 'unavailable') {
-        console.log('🔄 Usando configuración por defecto debido a problemas de conexión/permisos');
-        set({ settings: defaultSettings, loading: false, error: null });
-      } else {
-        set({ 
-          error: 'Error al cargar la configuración', 
-          loading: false,
-          settings: defaultSettings // Usar configuración por defecto como fallback
-        });
-      }
+      // Usar configuración por defecto como fallback
+      console.log('🔄 Usando configuración por defecto debido a error');
+      set({ 
+        settings: defaultSettings, 
+        loading: false, 
+        error: null 
+      });
     }
   },
 
   updateSettings: async (newSettings: Partial<SiteSettings>) => {
-    console.log('⚙️ Actualizando configuración en Firebase...');
+    console.log('⚙️ Actualizando configuración en base de datos...');
     set({ loading: true, error: null });
     
     try {
       const currentSettings = get().settings;
       const updatedSettings = { ...currentSettings, ...newSettings };
       
-      // Actualizar en Firebase
-      const docRef = doc(db, 'settings', 'site-config');
-      const firestoreData = convertSettingsToFirestore(updatedSettings);
-      await updateDoc(docRef, firestoreData);
+      // Preparar datos para la base de datos
+      const dbData: any = {
+        site_name: updatedSettings.siteName,
+        logo_url: updatedSettings.logoUrl,
+        logo_color: updatedSettings.logoColor
+      };
       
-      console.log('✅ Configuración actualizada en Firebase');
+      if (updatedSettings.contactInfo) {
+        dbData.contact_phone = updatedSettings.contactInfo.phone;
+        dbData.contact_whatsapp = updatedSettings.contactInfo.whatsapp;
+        dbData.contact_email = updatedSettings.contactInfo.email;
+        dbData.contact_address = updatedSettings.contactInfo.address;
+      }
+      
+      // Actualizar en base de datos
+      await dbService.settings.update(dbData);
+      
+      // Si hay términos nuevos, actualizarlos
+      if (newSettings.terms) {
+        await dbService.terms.create({
+          content: newSettings.terms.content,
+          createdBy: newSettings.terms.createdBy || 'Sistema'
+        });
+      }
+      
+      console.log('✅ Configuración actualizada en base de datos');
       
       set({ 
         settings: updatedSettings,
         loading: false 
       });
     } catch (error) {
-      console.error('❌ Error actualizando configuración en Firebase:', error);
+      console.error('❌ Error actualizando configuración en base de datos:', error);
       set({ error: 'Error al actualizar la configuración', loading: false });
       throw error;
     }
