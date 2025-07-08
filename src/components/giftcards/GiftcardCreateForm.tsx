@@ -97,7 +97,10 @@ const GiftcardCreateForm: React.FC = () => {
         duration: 3000,
       });
       
-      navigate('/giftcards');
+      // Esperar un momento antes de navegar para asegurar que se guarde
+      setTimeout(() => {
+        navigate('/giftcards');
+      }, 500);
       
     } catch (error) {
       console.error('Error creating giftcard:', error);

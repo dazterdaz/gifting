@@ -100,6 +100,8 @@ export function generateGiftcardNumber(existingNumbers: string[]): string {
   let attempts = 0;
   const maxAttempts = 100;
   
+  console.log('🎲 Generando número único, números existentes:', existingNumbers.length);
+  
   do {
     attempts++;
     
@@ -107,9 +109,16 @@ export function generateGiftcardNumber(existingNumbers: string[]): string {
     const randomNum = Math.floor(Math.random() * 90000000) + 10000000;
     number = String(randomNum);
     
+    console.log(`🎲 Intento ${attempts}: ${number}`);
+    
     // Si no hay números existentes o después de muchos intentos, usar el número generado
     if (existingNumbers.length === 0 || attempts >= maxAttempts) {
+      console.log('✅ Número aceptado (sin conflictos o máximo intentos alcanzado)');
       break;
+    }
+    
+    if (existingNumbers.includes(number)) {
+      console.log('⚠️ Número ya existe, generando otro...');
     }
     
   } while (existingNumbers.includes(number));
@@ -118,6 +127,7 @@ export function generateGiftcardNumber(existingNumbers: string[]): string {
     console.warn('⚠️ Se alcanzó el máximo de intentos para generar número único, usando:', number);
   }
   
+  console.log('🎯 Número final generado:', number);
   return number;
 }
 
