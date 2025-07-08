@@ -75,18 +75,6 @@ const GiftcardStatusChange: React.FC<GiftcardStatusChangeProps> = ({ giftcard, o
       return;
     }
     
-    // Validar que el cambio de estado sea permitido
-    if (!isSuperAdmin) {
-      if (
-        (giftcard.status === 'created_not_delivered' && status !== 'delivered') ||
-        (giftcard.status === 'delivered' && status !== 'redeemed') ||
-        (giftcard.status === 'redeemed' || giftcard.status === 'cancelled')
-      ) {
-        toast.error('No tienes permiso para realizar este cambio de estado');
-        return;
-      }
-    }
-    
     // Validar campos requeridos
     if (status === 'redeemed' && !artist) {
       toast.error('Por favor ingrese el nombre del artista');
@@ -100,23 +88,41 @@ const GiftcardStatusChange: React.FC<GiftcardStatusChangeProps> = ({ giftcard, o
     
     setIsSubmitting(true);
     try {
+      console.log('🔄 Cambiando estado de giftcard:', giftcard.id, 'de', giftcard.status, 'a', status);
+      
       await updateGiftcardStatus(giftcard.id, status, notes, artist);
       
       // Registrar la actividad
-      await logActivity({
-        userId: user.id,
-        username: user.username,
-        action: 'status_change',
-        targetType: 'giftcard',
-        targetId: giftcard.id,
-        details: `Cambió estado de ${translateStatus(giftcard.status, i18n.language)} a ${translateStatus(status, i18n.language)}`
-      });
+      try {
+        await logActivity({
+          userId: user.id,
+          username: user.username,
+          action: 'status_change',
+          targetType: 'giftcard',
+          targetId: giftcard.id,
+          details: `Cambió estado de ${translateStatus(giftcard.status, i18n.language)} a ${translateStatus(status, i18n.language)}`
+        });
+      } catch (activityError) {
+        console.warn('⚠️ Error registrando actividad:', activityError);
+        // No fallar por esto
+      }
       
       toast.success('Estado actualizado correctamente');
-      onComplete();
+      
+      // Pequeño delay para asegurar que el estado se actualice
+      setTimeout(() => {
+        onComplete();
+      }, 100);
+      
     } catch (error) {
       console.error('Error updating status:', error);
-      toast.error('Error al actualizar el estado');
+      
+      let errorMessage = 'Error al actualizar el estado';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

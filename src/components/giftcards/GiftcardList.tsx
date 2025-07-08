@@ -87,10 +87,12 @@ const GiftcardList: React.FC<GiftcardListProps> = ({ giftcards, loading = false 
   };
 
   const handleStatusChange = (giftcard: Giftcard) => {
+    console.log('🔄 Iniciando cambio de estado para giftcard:', giftcard.id, giftcard.number);
     setSelectedGiftcard(giftcard);
   };
 
   const handleStatusChangeComplete = () => {
+    console.log('✅ Cambio de estado completado, cerrando modal');
     setSelectedGiftcard(null);
   };
   
