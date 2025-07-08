@@ -149,7 +149,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
           .from('giftcards')
           .select('number')
           .eq('number', giftcardData.customNumber)
-          .single();
+          .maybeSingle();
         
         if (existingCard) {
           throw new Error(`El número ${giftcardData.customNumber} ya existe. Por favor use otro número.`);
