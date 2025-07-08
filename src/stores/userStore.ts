@@ -211,6 +211,19 @@ export const useUserStore = create<UserState>()((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Primero verificar si el usuario ya existe
+      const docRef = doc(db, 'users', 'admin-demian');
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        // El usuario ya existe, simplemente cargarlo
+        const existingUser = convertFirestoreToUser(docSnap);
+        console.log('✅ Usuario por defecto ya existe en Firebase, cargando...');
+        set({ users: [existingUser], loading: false });
+        return;
+      }
+      
+      // El usuario no existe, crearlo
       const defaultUser: Omit<User, 'id'> = {
         username: 'demian',
         email: 'demian.83@hotmail.es',
@@ -218,8 +231,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
         lastLogin: new Date().toISOString()
       };
       
-      // Crear en Firebase con ID específico
-      const docRef = doc(db, 'users', 'admin-demian');
+      // Crear en Firebase con ID específico (solo si no existe)
       const firestoreData = convertUserToFirestore(defaultUser);
       await setDoc(docRef, firestoreData);
       
