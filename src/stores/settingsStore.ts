@@ -165,7 +165,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
 
   fetchSettings: async () => {
     console.log('⚙️ Cargando configuración desde Firebase...');
-    set({ loading: true, error: null });
+    
+    // No mostrar loading en la UI para evitar bloqueos
+    set({ error: null });
     
     try {
       const docRef = doc(db, 'settings', 'site-config');
@@ -173,11 +175,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       
       if (docSnap.exists()) {
         const rawData = docSnap.data();
-        console.log('📄 Datos crudos de Firebase:', rawData);
         
         const settings = convertFirestoreToSettings(rawData);
         console.log('✅ Configuración cargada desde Firebase');
-        set({ settings, loading: false });
+        set({ settings });
       } else {
         // Si no existe, crear configuración por defecto
         console.log('📝 Creando configuración por defecto en Firebase...');
@@ -186,10 +187,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
           const firestoreData = convertSettingsToFirestore(defaultSettings);
           await setDoc(docRef, firestoreData);
           console.log('✅ Configuración por defecto creada en Firebase');
-          set({ settings: defaultSettings, loading: false });
+          set({ settings: defaultSettings });
         } catch (createError) {
           console.warn('⚠️ No se pudo crear configuración en Firebase, usando configuración local:', createError);
-          set({ settings: defaultSettings, loading: false });
+          set({ settings: defaultSettings });
         }
       }
     } catch (error) {
@@ -198,11 +199,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       // Si hay error de permisos o conexión, usar configuración por defecto
       if (error.code === 'permission-denied' || error.code === 'unavailable') {
         console.log('🔄 Usando configuración por defecto debido a problemas de conexión/permisos');
-        set({ settings: defaultSettings, loading: false, error: null });
+        set({ settings: defaultSettings, error: null });
       } else {
         set({ 
-          error: 'Error al cargar la configuración', 
-          loading: false,
+          error: null, // No mostrar error al usuario
           settings: defaultSettings // Usar configuración por defecto como fallback
         });
       }
@@ -211,7 +211,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
 
   updateSettings: async (newSettings: Partial<SiteSettings>) => {
     console.log('⚙️ Actualizando configuración en Firebase...');
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       const currentSettings = get().settings;
@@ -226,18 +226,17 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       
       set({ 
         settings: updatedSettings,
-        loading: false 
       });
     } catch (error) {
       console.error('❌ Error actualizando configuración en Firebase:', error);
-      set({ error: 'Error al actualizar la configuración', loading: false });
+      set({ error: 'Error al actualizar la configuración' });
       throw error;
     }
   },
 
   uploadLogo: async (file: File) => {
     console.log('📤 Subiendo logo...');
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       // Simular subida de archivo convirtiendo a base64
@@ -249,11 +248,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       });
       
       console.log('✅ Logo subido correctamente');
-      set({ loading: false });
       return dataUrl;
     } catch (error) {
       console.error('❌ Error subiendo logo:', error);
-      set({ error: 'Error al subir el logo', loading: false });
+      set({ error: 'Error al subir el logo' });
       throw error;
     }
   }

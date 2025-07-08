@@ -162,8 +162,17 @@ export const logout = async (): Promise<void> => {
 export const initializeUser = async (): Promise<void> => {
   console.log('🔄 Inicializando autenticación...');
   
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    // Timeout de seguridad
+    const timeoutId = setTimeout(() => {
+      console.warn('⚠️ Timeout en inicialización de usuario');
+      unsubscribe();
+      resolve(); // Resolver en lugar de rechazar para no bloquear la app
+    }, 5000);
+    
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      clearTimeout(timeoutId);
+      
       const authStore = useAuthStore.getState();
       
       if (firebaseUser && authStore.isAuthenticated) {
@@ -189,7 +198,7 @@ export const initializeUser = async (): Promise<void> => {
       
       unsubscribe();
       resolve();
-    });
+    }, reject);
   });
 };
 

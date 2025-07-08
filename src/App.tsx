@@ -33,49 +33,60 @@ function App() {
 
   useEffect(() => {
     const initialize = async () => {
+      console.log('🚀 Inicializando aplicación...');
+      
+      // Timeout de seguridad para evitar carga infinita
+      const timeoutId = setTimeout(() => {
+        console.warn('⚠️ Timeout de inicialización alcanzado, continuando...');
+        setIsLoading(false);
+      }, 10000); // 10 segundos máximo
+      
       try {
-        console.log('🚀 Inicializando aplicación...');
-        
-        // 1. Verificar conexión con Firebase
-        const isConnected = await checkFirebaseConnection();
-        if (!isConnected) {
-          console.warn('⚠️ Problemas de conexión con Firebase, continuando con datos locales');
-        }
-        
-        // 2. Inicializar colecciones de Firebase
-        try {
-          await initializeFirebaseCollections();
-        } catch (initError) {
-          console.warn('⚠️ Error inicializando Firebase, continuando:', initError);
-        }
-        
-        // 3. Inicializar datos de la aplicación
-        await Promise.all([
-          initializeUser(),
-          fetchSettings().catch(error => {
-            console.warn('⚠️ Error cargando configuración:', error);
+        // Inicializar en paralelo con timeouts individuales
+        const initPromises = [
+          // Inicializar usuario con timeout
+          Promise.race([
+            initializeUser(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout initializeUser')), 3000))
+          ]).catch(error => {
+            console.warn('⚠️ Error/timeout inicializando usuario:', error.message);
           }),
-          fetchUsers().catch(error => {
-            console.warn('⚠️ Error cargando usuarios:', error);
+          
+          // Cargar configuración con timeout
+          Promise.race([
+            fetchSettings(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout fetchSettings')), 3000))
+          ]).catch(error => {
+            console.warn('⚠️ Error/timeout cargando configuración:', error.message);
+          }),
+          
+          // Cargar usuarios con timeout
+          Promise.race([
+            fetchUsers(),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout fetchUsers')), 3000))
+          ]).catch(error => {
+            console.warn('⚠️ Error/timeout cargando usuarios:', error.message);
           })
+        ];
+        
+        // Esperar máximo 5 segundos por todas las inicializaciones
+        await Promise.race([
+          Promise.all(initPromises),
+          new Promise(resolve => setTimeout(resolve, 5000))
         ]);
-
+        
         console.log('✅ Aplicación inicializada correctamente');
         
       } catch (error) {
         console.error('❌ Error inicializando aplicación:', error);
-        
-        // No mostrar error al usuario si es problema de permisos
-        if (error.code !== 'permission-denied') {
-          toast.error('Error al inicializar el sistema');
-        }
       } finally {
+        clearTimeout(timeoutId);
         setIsLoading(false);
       }
     };
 
     initialize();
-  }, [fetchSettings, fetchUsers]);
+  }, []);
 
   useEffect(() => {
     document.documentElement.lang = i18n.language;

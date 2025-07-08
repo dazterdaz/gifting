@@ -97,72 +97,8 @@ const initialData = {
   ]
 };
 
-// Función para inicializar las colecciones en Firebase
-export const initializeFirebaseCollections = async () => {
-  try {
-    console.log('🔄 Inicializando colecciones de Firebase...');
-    
-    // 1. Crear usuario de autenticación si no existe
-    await initializeAuthUser();
-
-    // 1. Crear configuración del sitio
-    const settingsRef = doc(db, 'settings', 'site-config');
-    const settingsSnap = await getDoc(settingsRef);
-    
-    if (!settingsSnap.exists()) {
-      await setDoc(settingsRef, initialData.settings);
-      console.log('✅ Configuración del sitio creada en Firebase');
-    } else {
-      console.log('ℹ️ Configuración del sitio ya existe en Firebase');
-    }
-
-    // 2. Crear usuario administrador
-    for (const user of initialData.users) {
-      const userRef = doc(db, 'users', user.id);
-      const userSnap = await getDoc(userRef);
-      
-      if (!userSnap.exists()) {
-        await setDoc(userRef, user);
-        console.log(`✅ Usuario ${user.username} creado en Firebase`);
-      } else {
-        console.log(`ℹ️ Usuario ${user.username} ya existe en Firebase`);
-      }
-    }
-
-    // 3. Crear índices de colecciones (documentos vacíos para inicializar)
-    const collections = [
-      'giftcards',
-      'activities', 
-      'contactMessages'
-    ];
-
-    for (const collectionName of collections) {
-      const initRef = doc(db, collectionName, '_init');
-      const initSnap = await getDoc(initRef);
-      
-      if (!initSnap.exists()) {
-        await setDoc(initRef, {
-          _initialized: true,
-          createdAt: Timestamp.now(),
-          description: `Colección ${collectionName} inicializada`
-        });
-        console.log(`✅ Colección ${collectionName} inicializada en Firebase`);
-      } else {
-        console.log(`ℹ️ Colección ${collectionName} ya existe en Firebase`);
-      }
-    }
-
-    console.log('🎉 Todas las colecciones de Firebase han sido inicializadas correctamente');
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error inicializando colecciones de Firebase:', error);
-    throw error;
-  }
-};
-
-// Función para inicializar el usuario de autenticación
-const initializeAuthUser = async () => {
+// Función simplificada para crear usuario de autenticación si no existe
+export const ensureAuthUser = async () => {
   try {
     console.log('👤 Inicializando usuario de autenticación...');
     
@@ -173,7 +109,7 @@ const initializeAuthUser = async () => {
       // Intentar crear el usuario
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ Usuario de autenticación creado:', userCredential.user.uid);
-      
+      return userCredential.user;
       // Crear documento de usuario en Firestore
       const userRef = doc(db, 'users', userCredential.user.uid);
       await setDoc(userRef, {
@@ -187,6 +123,7 @@ const initializeAuthUser = async () => {
       
       console.log('✅ Documento de usuario creado en Firestore');
       
+      return userCredential.user;
     } catch (createError) {
       if (createError.code === 'auth/email-already-in-use') {
         console.log('ℹ️ Usuario de autenticación ya existe');
@@ -218,6 +155,7 @@ const initializeAuthUser = async () => {
             // Cerrar sesión después de verificar/crear
             await auth.signOut();
             console.log('👋 Sesión cerrada después de inicialización');
+            return currentUser;
           }
         } catch (signInError) {
           if (signInError.code === 'auth/wrong-password') {
@@ -233,6 +171,7 @@ const initializeAuthUser = async () => {
         console.log('🔄 Continuando sin crear usuario de autenticación...');
       }
     }
+    return null;
     
   } catch (error) {
     console.error('❌ Error inicializando usuario de autenticación:', error);
@@ -240,6 +179,7 @@ const initializeAuthUser = async () => {
   }
 };
 
+// Función simplificada para verificar la conectividad con Firebase
 // Función para verificar la conectividad con Firebase
 export const checkFirebaseConnection = async () => {
   try {
