@@ -1,128 +1,47 @@
-import { 
-  signInWithEmailAndPassword, 
-  signOut, 
-  onAuthStateChanged,
-  User as FirebaseUser,
-  setDoc,
-  Timestamp
-} from './firebase';
-import { auth, db, doc, getDoc } from './firebase';
 import { useAuthStore } from '../stores/authStore';
 import { useActivityStore } from '../stores/activityStore';
 import { User, LoginCredentials } from '../types';
 
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
-  console.log('🔐 Iniciando proceso de autenticación...');
+  console.log('🔐 Iniciando proceso de login...');
   
-  try {
-    // Convertir username a email si es necesario
-    let email = usernameOrEmail;
-    if (!usernameOrEmail.includes('@')) {
-      // Si es username, convertir a email
-      if (usernameOrEmail.toLowerCase() === 'demian') {
-        email = 'demian.83@hotmail.es';
-      } else {
-        console.log('❌ Usuario no encontrado');
-        return null;
-      }
-    }
-    
-    console.log('🔍 Verificando credenciales...');
-    
-    // Autenticar con Firebase Auth
-    const userCredential = await signInWithEmailAndPassword(auth, email, password);
-    const firebaseUser = userCredential.user;
-    
-    console.log('✅ Autenticación exitosa');
-    
-    // Obtener datos adicionales del usuario desde Firestore
-    try {
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      
-      let userData: User;
-      
-      if (userDoc.exists()) {
-        const docData = userDoc.data();
-        userData = {
-          id: firebaseUser.uid,
-          username: docData.username || 'demian',
-          email: firebaseUser.email || email,
-          role: docData.role || 'superadmin',
-          lastLogin: new Date().toISOString()
-        };
-        console.log('✅ Datos de usuario obtenidos de Firestore');
-      } else {
-        // Si no existe el documento, crear uno
-        console.log('📝 Creando perfil de usuario...');
-        
-        userData = {
-          id: firebaseUser.uid,
-          username: 'demian',
-          email: firebaseUser.email || email,
-          role: 'superadmin',
-          lastLogin: new Date().toISOString()
-        };
-        
-        // Intentar crear el documento en Firestore
-        try {
-          await setDoc(userDocRef, {
-            username: userData.username,
-            email: userData.email,
-            role: userData.role,
-            createdAt: Timestamp.fromDate(new Date()),
-            lastLogin: Timestamp.fromDate(new Date()),
-            isActive: true
-          });
-          console.log('✅ Documento de usuario creado en Firestore');
-        } catch (createDocError) {
-          console.warn('⚠️ Error creando perfil de usuario:', createDocError);
-        }
-      }
-      
-      // Obtener token de Firebase
-      const token = await firebaseUser.getIdToken();
-      
-      console.log('✅ Sesión iniciada correctamente');
-      
-      return { user: userData, token };
-      
-    } catch (firestoreError) {
-      console.error('❌ Error obteniendo datos del usuario:', firestoreError);
-      
-      // Como fallback, usar datos básicos de Firebase Auth
-      const userData: User = {
-        id: firebaseUser.uid,
-        username: 'demian',
-        email: firebaseUser.email || email,
-        role: 'superadmin',
-        lastLogin: new Date().toISOString()
-      };
-      
-      const token = await firebaseUser.getIdToken();
-      
-      console.log('🔄 Usando datos básicos como respaldo');
-      return { user: userData, token };
-    }
-    
-  } catch (error) {
-    console.error('❌ Error en autenticación:', error);
-    
-    // Si es error de credenciales inválidas
-    if (
-      error.code === 'auth/invalid-credential' || 
-      error.code === 'auth/user-not-found' || 
-      error.code === 'auth/wrong-password' ||
-      error.code === 'auth/invalid-email'
-    ) {
-      console.log('❌ Credenciales incorrectas');
-      return null;
-    }
-    
-    // Para otros errores, también retornar null
-    console.log('❌ Error de autenticación');
+  // Simulating API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Usuario hardcodeado para el sistema
+  const systemUser = {
+    id: 'admin-demian',
+    username: 'demian',
+    email: 'demian.83@hotmail.es',
+    password: '@Llamasami1',
+    role: 'superadmin' as const,
+    lastLogin: new Date().toISOString()
+  };
+  
+  console.log('🔍 Verificando credenciales...');
+  
+  // Verificar credenciales (username o email)
+  const isValidUsername = usernameOrEmail.toLowerCase() === systemUser.username.toLowerCase();
+  const isValidEmail = usernameOrEmail.toLowerCase() === systemUser.email.toLowerCase();
+  const isValidPassword = password === systemUser.password;
+  
+  if ((!isValidUsername && !isValidEmail) || !isValidPassword) {
+    console.log('❌ Credenciales incorrectas');
     return null;
   }
+  
+  console.log('✅ Credenciales correctas');
+  
+  // Generate mock token
+  const token = `token-${Math.random().toString(36).substring(2, 10)}-${Date.now()}`;
+  
+  // Strip password from returned user object
+  const { password: _, ...safeUser } = systemUser;
+  
+  console.log('🎫 Token generado');
+  console.log('👤 Usuario autenticado:', safeUser.username);
+  
+  return { user: safeUser, token };
 };
 
 export const logout = async (): Promise<void> => {
@@ -146,57 +65,18 @@ export const logout = async (): Promise<void> => {
     }
   }
   
-  try {
-    await signOut(auth);
-    console.log('✅ Sesión cerrada en Firebase Auth');
-  } catch (error) {
-    console.error('❌ Error cerrando sesión:', error);
-  }
-  
   useAuthStore.getState().logout();
 };
 
 export const initializeUser = async (): Promise<void> => {
-  console.log('🔄 Inicializando autenticación...');
+  const authStore = useAuthStore.getState();
   
-  return new Promise((resolve, reject) => {
-    // Timeout de seguridad
-    const timeoutId = setTimeout(() => {
-      console.warn('⚠️ Timeout en inicialización de usuario');
-      unsubscribe();
-      resolve(); // Resolver en lugar de rechazar para no bloquear la app
-    }, 5000);
-    
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
-      clearTimeout(timeoutId);
-      
-      const authStore = useAuthStore.getState();
-      
-      if (firebaseUser && authStore.isAuthenticated) {
-        console.log('✅ Usuario ya autenticado:', authStore.user?.username);
-        
-        // Actualizar token si es necesario
-        try {
-          const newToken = await firebaseUser.getIdToken();
-          if (newToken !== authStore.token) {
-            console.log('🔄 Actualizando token de Firebase');
-            authStore.login(authStore.user!, newToken);
-          }
-        } catch (tokenError) {
-          console.warn('⚠️ Error actualizando token:', tokenError);
-        }
-        
-      } else if (!firebaseUser && authStore.isAuthenticated) {
-        console.log('⚠️ Usuario desautenticado en Firebase, limpiando estado local');
-        authStore.logout();
-      } else {
-        console.log('ℹ️ No hay sesión activa');
-      }
-      
-      unsubscribe();
-      resolve();
-    }, reject);
-  });
+  // Check if there's a stored session
+  if (authStore.isAuthenticated && authStore.user && authStore.token) {
+    console.log('✅ Usuario ya autenticado:', authStore.user.username);
+  } else {
+    console.log('ℹ️ No hay sesión activa');
+  }
 };
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
@@ -206,11 +86,11 @@ export const changePassword = async (userId: string, currentPassword: string, ne
 };
 
 // Función para obtener el usuario actual autenticado
-export const getCurrentUser = (): FirebaseUser | null => {
-  return auth.currentUser;
+export const getCurrentUser = (): User | null => {
+  return useAuthStore.getState().user;
 };
 
 // Función para verificar si el usuario está autenticado
 export const isAuthenticated = (): boolean => {
-  return auth.currentUser !== null;
+  return useAuthStore.getState().isAuthenticated;
 };

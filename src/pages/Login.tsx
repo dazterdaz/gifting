@@ -10,7 +10,6 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
-import { initializeFirebaseCollections } from '../lib/firebaseInit';
 
 interface LoginFormValues {
   usernameOrEmail: string;
@@ -30,7 +29,6 @@ const Login = () => {
   
   const onSubmit = async (data: LoginFormValues) => {
     console.log('🚀 Iniciando submit del formulario...');
-    
     setIsLoading(true);
     
     try {
@@ -46,9 +44,6 @@ const Login = () => {
         
         // Log de actividad
         try {
-          // Inicializar Firebase en background si no se ha hecho
-          initializeFirebaseCollections();
-          
           await logActivity({
             userId: result.user.id,
             username: result.user.username,
@@ -65,8 +60,8 @@ const Login = () => {
         console.log('🎯 Navegando al dashboard...');
         navigate('/dashboard');
       } else {
-        console.log('❌ Credenciales incorrectas');
-        toast.error('Usuario o contraseña incorrectos');
+        console.log('❌ Login fallido');
+        toast.error('Usuario o contraseña incorrectos. Verifique sus credenciales.');
       }
     } catch (error) {
       console.error('💥 Error en login:', error);
@@ -106,8 +101,8 @@ const Login = () => {
           <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow rounded-lg sm:px-10">
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <Input
-                label="Usuario"
-                placeholder="Ingrese su nombre de usuario"
+                label="Usuario o Email"
+                placeholder="Ingrese su usuario o email"
                 {...register('usernameOrEmail', { required: 'Este campo es obligatorio' })}
                 error={errors.usernameOrEmail?.message}
                 autoComplete="username"
@@ -146,7 +141,7 @@ const Login = () => {
                   isLoading={isLoading}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                  {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
                 </Button>
               </div>
             </form>

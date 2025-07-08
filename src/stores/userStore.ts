@@ -59,7 +59,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
   
   fetchUsers: async () => {
     console.log('👥 Cargando usuarios desde Firebase...');
-    set({ error: null });
+    set({ loading: true, error: null });
     
     try {
       const usersRef = collection(db, 'users');
@@ -77,38 +77,20 @@ export const useUserStore = create<UserState>()((set, get) => ({
         return;
       }
       
-      set({ users });
+      set({ users, loading: false });
     } catch (error) {
       console.error('❌ Error cargando usuarios desde Firebase:', error);
       
-      // Si hay error de permisos, intentar crear usuario por defecto
-      if (error.code === 'permission-denied') {
-        console.log('🔄 Intentando crear usuario por defecto debido a permisos...');
-        try {
-          await get().initializeDefaultUser();
-        } catch (initError) {
-          console.error('❌ Error creando usuario por defecto:', initError);
-          // Usar datos locales como último recurso
-          const defaultUser: User = {
-            id: 'admin-demian',
-            username: 'demian',
-            email: 'demian.83@hotmail.es',
-            role: 'superadmin',
-            lastLogin: new Date().toISOString()
-          };
-          set({ users: [defaultUser], error: null });
-        }
-      } else {
-        // Para otros errores, usar usuario por defecto
-        const defaultUser: User = {
-          id: 'admin-demian',
-          username: 'demian',
-          email: 'demian.83@hotmail.es',
-          role: 'superadmin',
-          lastLogin: new Date().toISOString()
-        };
-        set({ users: [defaultUser], error: null });
-      }
+      // Para cualquier error, usar usuario por defecto local
+      console.log('🔄 Usando usuario por defecto local debido a error de Firebase');
+      const defaultUser: User = {
+        id: 'admin-demian',
+        username: 'demian',
+        email: 'demian.83@hotmail.es',
+        role: 'superadmin',
+        lastLogin: new Date().toISOString()
+      };
+      set({ users: [defaultUser], loading: false, error: null });
     }
   },
   
@@ -230,7 +212,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
 
   initializeDefaultUser: async () => {
     console.log('🔧 Inicializando usuario por defecto en Firebase...');
-    set({ error: null });
+    set({ loading: true, error: null });
     
     try {
       // Primero verificar si el usuario ya existe
@@ -264,7 +246,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       
       console.log('✅ Usuario por defecto creado en Firebase');
       
-      set({ users: [createdUser] });
+      set({ users: [createdUser], loading: false });
     } catch (error) {
       console.error('❌ Error inicializando usuario por defecto en Firebase:', error);
       
@@ -278,7 +260,7 @@ export const useUserStore = create<UserState>()((set, get) => ({
       };
       
       console.log('🔄 Usando usuario por defecto local como fallback');
-      set({ users: [defaultUser], error: null });
+      set({ users: [defaultUser], loading: false, error: null });
     }
   }
 }));

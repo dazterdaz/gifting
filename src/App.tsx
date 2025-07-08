@@ -20,6 +20,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
+import { initializeUser } from './lib/auth';
 import toast from 'react-hot-toast';
 
 function App() {
@@ -31,33 +32,24 @@ function App() {
 
   useEffect(() => {
     const initialize = async () => {
-      console.log('🚀 Inicializando aplicación...');
-      
       try {
-        // Inicializar configuración básica primero (sin Firebase)
-        console.log('⚙️ Cargando configuración básica...');
+        console.log('🚀 Inicializando aplicación...');
         
-        // Cargar configuración con timeout corto
-        const settingsPromise = fetchSettings().catch(error => {
-          console.warn('⚠️ Error cargando configuración, usando por defecto:', error);
-        });
-        
-        // Cargar usuarios con timeout corto
-        const usersPromise = fetchUsers().catch(error => {
-          console.warn('⚠️ Error cargando usuarios, usando por defecto:', error);
-        });
-        
-        // Esperar máximo 2 segundos por la inicialización
+        // Inicializar datos de la aplicación con timeout
         await Promise.race([
-          Promise.all([settingsPromise, usersPromise]),
-          new Promise(resolve => setTimeout(resolve, 2000))
+          Promise.all([
+            initializeUser(),
+            fetchSettings(),
+            fetchUsers()
+          ]),
+          new Promise(resolve => setTimeout(resolve, 3000)) // Timeout de 3 segundos
         ]);
         
-        console.log('✅ Aplicación inicializada');
+        console.log('✅ Aplicación inicializada correctamente');
         
       } catch (error) {
         console.error('❌ Error inicializando aplicación:', error);
-        // No mostrar error al usuario, continuar con valores por defecto
+        // No mostrar error crítico al usuario
       } finally {
         setIsLoading(false);
       }
@@ -77,7 +69,7 @@ function App() {
         <div className="text-center">
           <div className="animate-spin w-16 h-16 border-b-2 border-primary-600 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Cargando aplicación...
+            Inicializando sistema...
           </p>
         </div>
       </div>
