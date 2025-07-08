@@ -33,7 +33,6 @@ export interface Giftcard {
   amount: number;
   status: GiftcardStatus;
   createdAt: string;
-  duration?: number; // Duración en días (por defecto 90)
   deliveredAt?: string;
   expiresAt?: string;
   redeemedAt?: string;

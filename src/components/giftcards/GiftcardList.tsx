@@ -87,12 +87,10 @@ const GiftcardList: React.FC<GiftcardListProps> = ({ giftcards, loading = false 
   };
 
   const handleStatusChange = (giftcard: Giftcard) => {
-    console.log('🔄 Iniciando cambio de estado para giftcard:', giftcard.id, giftcard.number);
     setSelectedGiftcard(giftcard);
   };
 
   const handleStatusChangeComplete = () => {
-    console.log('✅ Cambio de estado completado, cerrando modal');
     setSelectedGiftcard(null);
   };
   
@@ -234,7 +232,7 @@ const GiftcardList: React.FC<GiftcardListProps> = ({ giftcards, loading = false 
                                 isExpiringSoon ? 'text-warning-600 dark:text-warning-400 font-medium' : 'text-gray-500 dark:text-gray-400'
                               )}
                             >
-                              {daysLeft} {daysLeft === 1 ? 'día restante' : 'días restantes'}
+                              {daysLeft} {t('giftcards.daysLeft')}
                             </span>
                           ) : (
                             <span className="text-error-600 dark:text-error-400 font-medium">

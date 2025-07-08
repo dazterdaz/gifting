@@ -135,62 +135,34 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
   },
   
   createGiftcard: async (giftcardData: any) => {
-    console.log('➕ Creando nueva giftcard...', giftcardData);
+    console.log('➕ Creando nueva giftcard en Firebase...');
     set({ loading: true, error: null });
     
     try {
-      let existingNumbers: string[] = [];
-      
-      try {
-        // Intentar obtener números existentes de Firebase
-        const giftcardsRef = collection(db, 'giftcards');
-        const querySnapshot = await getDocs(giftcardsRef);
-        existingNumbers = querySnapshot.docs.map(doc => doc.data().number).filter(Boolean);
-        console.log('📊 Números existentes obtenidos:', existingNumbers.length);
-      } catch (firebaseError) {
-        console.warn('⚠️ Error obteniendo números existentes, generando sin verificación:', firebaseError);
-        // Continuar sin verificación si Firebase falla
-      }
+      // Obtener números existentes para generar uno único
+      const giftcardsRef = collection(db, 'giftcards');
+      const querySnapshot = await getDocs(giftcardsRef);
+      const existingNumbers = querySnapshot.docs.map(doc => doc.data().number);
       
       const newGiftcard: Omit<Giftcard, 'id'> = {
         number: generateGiftcardNumber(existingNumbers),
         buyer: giftcardData.buyer,
         recipient: giftcardData.recipient,
         amount: giftcardData.amount,
-        duration: giftcardData.duration || 90, // Guardar la duración seleccionada
         status: 'created_not_delivered',
         createdAt: new Date().toISOString(),
       };
       
-      console.log('🎫 Giftcard preparada:', newGiftcard);
+      // Convertir a formato Firestore y guardar
+      const firestoreData = convertGiftcardToFirestore(newGiftcard);
+      const docRef = await addDoc(giftcardsRef, firestoreData);
       
-      let createdGiftcard: Giftcard;
+      const createdGiftcard: Giftcard = {
+        ...newGiftcard,
+        id: docRef.id
+      };
       
-      try {
-        // Intentar guardar en Firebase
-        const giftcardsRef = collection(db, 'giftcards');
-        const firestoreData = convertGiftcardToFirestore(newGiftcard);
-        const docRef = await addDoc(giftcardsRef, firestoreData);
-        
-        createdGiftcard = {
-          ...newGiftcard,
-          id: docRef.id
-        };
-        
-        console.log('✅ Giftcard guardada en Firebase:', createdGiftcard.number);
-      } catch (firebaseError) {
-        console.warn('⚠️ Error guardando en Firebase, creando localmente:', firebaseError);
-        
-        // Crear localmente si Firebase falla
-        createdGiftcard = {
-          ...newGiftcard,
-          id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-        };
-        
-        console.log('📱 Giftcard creada localmente:', createdGiftcard.number);
-      }
-      
-      console.log('🎉 Giftcard creada exitosamente:', createdGiftcard);
+      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
       
       // Actualizar estado local
       set(state => ({ 
@@ -201,17 +173,8 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       return createdGiftcard;
     } catch (error) {
-      console.error('❌ Error creando giftcard:', error);
-      
-      let errorMessage = 'Error al crear la tarjeta de regalo';
-      
-      if (error instanceof Error) {
-        errorMessage = error.message;
-      } else if (typeof error === 'string') {
-        errorMessage = error;
-      }
-      
-      set({ error: errorMessage, loading: false });
+      console.error('❌ Error creando giftcard en Firebase:', error);
+      set({ error: 'Error al crear la tarjeta de regalo', loading: false });
       throw error;
     }
   },
@@ -226,14 +189,8 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       if (status === 'delivered') {
         updateData.deliveredAt = now;
-        
-        // Obtener la duración de la giftcard actual
-        const { giftcards } = get();
-        const currentGiftcard = giftcards.find(g => g.id === id);
-        const duration = currentGiftcard?.duration || 90;
-        
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + duration);
+        expiryDate.setDate(expiryDate.getDate() + 90);
         updateData.expiresAt = expiryDate.toISOString();
       } else if (status === 'redeemed') {
         updateData.redeemedAt = now;
@@ -244,33 +201,22 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         if (notes) updateData.notes = notes;
       }
       
-      try {
-        // Actualizar en Firebase
-        const docRef = doc(db, 'giftcards', id);
-        const firestoreData = convertGiftcardToFirestore(updateData);
-        await updateDoc(docRef, firestoreData);
-        console.log('✅ Estado actualizado en Firebase');
-      } catch (firebaseError) {
-        console.warn('⚠️ Error actualizando en Firebase, continuando con actualización local:', firebaseError);
-      }
+      // Actualizar en Firebase
+      const docRef = doc(db, 'giftcards', id);
+      const firestoreData = convertGiftcardToFirestore(updateData);
+      await updateDoc(docRef, firestoreData);
       
-      // Actualizar estado local SIEMPRE (incluso si Firebase falla)
+      console.log('✅ Estado actualizado en Firebase');
+      
+      // Actualizar estado local
       set(state => {
         const updatedGiftcards = state.giftcards.map(giftcard => 
           giftcard.id === id ? { ...giftcard, ...updateData } : giftcard
         );
         
-        const updatedFilteredGiftcards = state.filteredGiftcards.map(giftcard => 
-          giftcard.id === id ? { ...giftcard, ...updateData } : giftcard
-        );
-        
-        console.log('🔄 Actualizando estado local para giftcard:', id);
-        console.log('📊 Giftcards antes:', state.giftcards.length);
-        console.log('📊 Giftcards después:', updatedGiftcards.length);
-        
         return {
           giftcards: updatedGiftcards,
-          filteredGiftcards: updatedFilteredGiftcards,
+          filteredGiftcards: updatedGiftcards,
           selectedGiftcard: state.selectedGiftcard?.id === id 
             ? { ...state.selectedGiftcard, ...updateData } 
             : state.selectedGiftcard,
@@ -279,10 +225,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       });
     } catch (error) {
       console.error('❌ Error actualizando estado en Firebase:', error);
-      
-      // No fallar completamente, solo mostrar warning
-      console.warn('⚠️ Continuando sin actualización en Firebase');
-      set({ loading: false });
+      set({ error: 'Error al actualizar el estado de la tarjeta', loading: false });
       throw error;
     }
   },
@@ -433,8 +376,6 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     console.log('🔍 Aplicando filtros:', filters);
     
     const { giftcards } = get();
-    console.log('📊 Total giftcards disponibles para filtrar:', giftcards.length);
-    
     let filtered = [...giftcards];
     
     if (filters.number) {
@@ -478,7 +419,6 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     }
     
     console.log('✅ Filtros aplicados, resultados:', filtered.length);
-    console.log('📋 Filtros activos:', Object.keys(filters).filter(key => filters[key as keyof GiftcardSearchFilters]));
     
     set({ filteredGiftcards: filtered, filters });
   },

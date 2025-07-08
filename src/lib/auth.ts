@@ -4,12 +4,12 @@ import { User, LoginCredentials } from '../types';
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
   console.log('🔐 Iniciando proceso de login...');
   
-  // Simular delay de API más corto
-  await new Promise(resolve => setTimeout(resolve, 200));
+  // Simulating API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
   
   // Usuario hardcodeado para demo
   const demoUser = {
-    id: 'admin-demian',
+    id: '1',
     username: 'demian',
     email: 'demian.83@hotmail.es',
     password: '@Llamasami1',

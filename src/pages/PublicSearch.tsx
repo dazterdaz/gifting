@@ -9,7 +9,7 @@ import { useGiftcardStore } from '../stores/giftcardStore';
 import { useSettingsStore } from '../stores/settingsStore';
 import { useActivityStore } from '../stores/activityStore';
 import { PublicGiftcardView } from '../types';
-import { formatCurrency, formatDate, daysUntilExpiration } from '../lib/utils';
+import { formatCurrency, formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
@@ -274,85 +274,9 @@ const PublicSearch = () => {
                       )}
                       
                       {giftcardInfo.expiresAt && (
-                        <>
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{t('giftcards.public.result.expirationDate')}</span>
-                            <span className="font-medium text-gray-900 dark:text-white">{formatDate(giftcardInfo.expiresAt)}</span>
-                          </div>
-                          
-                          {(() => {
-                            const daysLeft = daysUntilExpiration(giftcardInfo.expiresAt);
-                            const isExpired = daysLeft !== null && daysLeft <= 0;
-                            const isExpiringSoon = daysLeft !== null && daysLeft > 0 && daysLeft <= 15;
-                            
-                            return (
-                              <div className={`p-3 rounded-lg border ${
-                                isExpired 
-                                  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                                  : isExpiringSoon 
-                                    ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
-                                    : 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
-                              }`}>
-                                <div className="flex items-center justify-between">
-                                  <span className={`text-sm font-medium ${
-                                    isExpired 
-                                      ? 'text-red-800 dark:text-red-200' 
-                                      : isExpiringSoon 
-                                        ? 'text-yellow-800 dark:text-yellow-200'
-                                        : 'text-green-800 dark:text-green-200'
-                                  }`}>
-                                    {isExpired ? '⚠️ Estado de vencimiento:' : '⏰ Días restantes:'}
-                                  </span>
-                                  <span className={`font-bold text-lg ${
-                                    isExpired 
-                                      ? 'text-red-600 dark:text-red-400' 
-                                      : isExpiringSoon 
-                                        ? 'text-yellow-600 dark:text-yellow-400'
-                                        : 'text-green-600 dark:text-green-400'
-                                  }`}>
-                                    {isExpired 
-                                      ? 'VENCIDA' 
-                                      : `${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}`
-                                    }
-                                  </span>
-                                </div>
-                                
-                                {isExpired && (
-                                  <p className="text-xs text-red-700 dark:text-red-300 mt-1">
-                                    Esta tarjeta ha vencido. Contacte con Daz Tattoo para más información.
-                                  </p>
-                                )}
-                                
-                                {isExpiringSoon && !isExpired && (
-                                  <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                                    ¡Su tarjeta vence pronto! Programe su cita cuanto antes.
-                                  </p>
-                                )}
-                                
-                                {!isExpired && !isExpiringSoon && (
-                                  <p className="text-xs text-green-700 dark:text-green-300 mt-1">
-                                    Su tarjeta está vigente. Puede usarla cuando guste.
-                                  </p>
-                                )}
-                              </div>
-                            );
-                          })()}
-                        </>
-                      )}
-                      
-                      {giftcardInfo.status === 'created_not_delivered' && (
-                        <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                          <div className="flex items-center gap-2">
-                            <span className="text-blue-600 dark:text-blue-400">ℹ️</span>
-                            <div>
-                              <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                                Tarjeta pendiente de entrega
-                              </p>
-                              <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                                La fecha de vencimiento se establecerá cuando la tarjeta sea entregada (90 días desde la entrega).
-                              </p>
-                            </div>
-                          </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">{t('giftcards.public.result.expirationDate')}</span>
+                          <span className="font-medium text-gray-900 dark:text-white">{formatDate(giftcardInfo.expiresAt)}</span>
                         </div>
                       )}
                     </div>

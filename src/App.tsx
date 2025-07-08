@@ -36,37 +36,39 @@ function App() {
       try {
         console.log('🚀 Inicializando aplicación...');
         
-        // Inicializar usuario primero (no depende de Firebase)
-        await initializeUser();
-        
-        // Inicializar Firebase primero
-        try {
-          console.log('🔥 Verificando conexión con Firebase...');
-          const isConnected = await checkFirebaseConnection();
-          
-          if (isConnected) {
-            console.log('🔥 Inicializando colecciones de Firebase...');
-            await initializeFirebaseCollections();
-            console.log('✅ Firebase inicializado correctamente');
-          } else {
-            console.warn('⚠️ No se pudo conectar con Firebase');
-          }
-        } catch (firebaseError) {
-          console.warn('⚠️ Error con Firebase, continuando sin él:', firebaseError);
+        // 1. Verificar conexión con Firebase
+        const isConnected = await checkFirebaseConnection();
+        if (!isConnected) {
+          console.warn('⚠️ Problemas de conexión con Firebase, continuando con datos locales');
         }
         
-        // Luego cargar datos de la aplicación
+        // 2. Inicializar colecciones de Firebase
+        try {
+          await initializeFirebaseCollections();
+        } catch (initError) {
+          console.warn('⚠️ Error inicializando Firebase, continuando:', initError);
+        }
+        
+        // 3. Inicializar datos de la aplicación
         await Promise.all([
-          fetchSettings(),
-          fetchUsers()
+          initializeUser(),
+          fetchSettings().catch(error => {
+            console.warn('⚠️ Error cargando configuración:', error);
+          }),
+          fetchUsers().catch(error => {
+            console.warn('⚠️ Error cargando usuarios:', error);
+          })
         ]);
 
         console.log('✅ Aplicación inicializada correctamente');
         
       } catch (error) {
         console.error('❌ Error inicializando aplicación:', error);
-        // No mostrar error crítico, la app puede funcionar sin Firebase
-        console.log('🔄 Continuando con configuración local...');
+        
+        // No mostrar error al usuario si es problema de permisos
+        if (error.code !== 'permission-denied') {
+          toast.error('Error al inicializar el sistema');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -87,6 +89,9 @@ function App() {
           <div className="animate-spin w-16 h-16 border-b-2 border-primary-600 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
             Inicializando aplicación...
+          </p>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-500">
+            Conectando con Firebase...
           </p>
         </div>
       </div>
