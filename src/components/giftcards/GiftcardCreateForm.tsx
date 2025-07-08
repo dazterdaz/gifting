@@ -6,6 +6,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 import { useGiftcardStore } from '../../stores/giftcardStore';
 import { useActivityStore } from '../../stores/activityStore';
 import { useAuthStore } from '../../stores/authStore';
+import { getCurrentUser } from '../../lib/auth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
@@ -26,7 +27,7 @@ interface GiftcardFormValues {
 const GiftcardCreateForm: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, ensureFirebaseAuth } = useAuthStore();
   const { createGiftcard } = useGiftcardStore();
   const { logActivity } = useActivityStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,7 +48,11 @@ const GiftcardCreateForm: React.FC = () => {
   ];
   
   const onSubmit = async (data: GiftcardFormValues) => {
-    if (!user) return;
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      toast.error('No hay usuario autenticado');
+      return;
+    }
     
     console.log('📝 Iniciando creación de tarjeta de regalo...');
     console.log('📋 Datos del formulario:', {
@@ -58,6 +63,14 @@ const GiftcardCreateForm: React.FC = () => {
     
     setIsSubmitting(true);
     try {
+      // Asegurar autenticación en Firebase antes de proceder
+      console.log('🔐 Verificando autenticación en Firebase...');
+      const isAuthenticated = await ensureFirebaseAuth();
+      
+      if (!isAuthenticated) {
+        console.warn('⚠️ No se pudo autenticar en Firebase, continuando...');
+      }
+      
       const giftcardData = {
         buyer: {
           name: data.buyerName,
@@ -81,8 +94,8 @@ const GiftcardCreateForm: React.FC = () => {
       // Intentar registrar actividad, pero no fallar si hay error
       try {
         await logActivity({
-          userId: user.id,
-          username: user.username,
+          userId: currentUser.id,
+          username: currentUser.username,
           action: 'created',
           targetType: 'giftcard',
           targetId: newGiftcard.id,
@@ -104,7 +117,7 @@ const GiftcardCreateForm: React.FC = () => {
       
       let errorMessage = 'Error al crear la tarjeta de regalo';
       if (error.message && error.message.includes('permission')) {
-        errorMessage = 'Error de permisos. Verifique su sesión.';
+        errorMessage = 'Error de permisos. Intente cerrar sesión y volver a iniciar.';
       } else if (error.message) {
         errorMessage = error.message;
       }

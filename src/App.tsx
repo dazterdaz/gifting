@@ -21,6 +21,7 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
 import { initializeUser } from './lib/auth';
+import { initializeFirebaseCollections } from './lib/firebaseInit';
 import toast from 'react-hot-toast';
 
 function App() {
@@ -44,6 +45,11 @@ function App() {
           ]),
           new Promise(resolve => setTimeout(resolve, 3000)) // Timeout de 3 segundos
         ]);
+        
+        // Inicializar Firebase en background (no bloquear)
+        initializeFirebaseCollections().catch(error => {
+          console.warn('⚠️ Error en inicialización de Firebase:', error);
+        });
         
         console.log('✅ Aplicación inicializada correctamente');
         

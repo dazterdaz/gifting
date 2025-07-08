@@ -9,7 +9,8 @@ import { db } from './firebase';
 
 import { 
   createUserWithEmailAndPassword,
-  signInWithEmailAndPassword 
+  signInWithEmailAndPassword,
+  onAuthStateChanged
 } from './firebase';
 import { auth } from './firebase';
 
@@ -21,14 +22,22 @@ export const ensureAuthUser = async () => {
     const email = 'demian.83@hotmail.es';
     const password = '@Llamasami1';
     
+    // Verificar si ya hay un usuario autenticado
+    const currentUser = auth.currentUser;
+    if (currentUser && currentUser.email === email) {
+      console.log('✅ Usuario ya autenticado en Firebase');
+      return currentUser;
+    }
+    
     try {
       // Intentar crear el usuario de autenticación
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('✅ Usuario de autenticación creado');
       
       // Crear documento de usuario en Firestore
-      const userRef = doc(db, 'users', userCredential.user.uid);
+      const userRef = doc(db, 'users', 'admin-demian');
       await setDoc(userRef, {
+        uid: userCredential.user.uid,
         username: 'demian',
         email: email,
         role: 'superadmin',
@@ -39,15 +48,23 @@ export const ensureAuthUser = async () => {
       
       console.log('✅ Documento de usuario creado en Firestore');
       
-      // Cerrar sesión después de crear
-      await auth.signOut();
+      // No cerrar sesión, mantener autenticado
       
       return userCredential.user;
       
     } catch (createError) {
       if (createError.code === 'auth/email-already-in-use') {
         console.log('ℹ️ Usuario de autenticación ya existe');
-        return null;
+        
+        // Intentar iniciar sesión con el usuario existente
+        try {
+          const signInResult = await signInWithEmailAndPassword(auth, email, password);
+          console.log('✅ Sesión iniciada con usuario existente');
+          return signInResult.user;
+        } catch (signInError) {
+          console.warn('⚠️ Error iniciando sesión:', signInError.code);
+          return null;
+        }
       } else {
         console.warn('⚠️ Error configurando autenticación:', createError.code);
         return null;
@@ -58,6 +75,17 @@ export const ensureAuthUser = async () => {
     console.warn('⚠️ Error en configuración de autenticación:', error.code || error.message);
     return null;
   }
+};
+
+// Función para configurar listener de autenticación
+export const setupAuthListener = () => {
+  return onAuthStateChanged(auth, (user) => {
+    if (user) {
+      console.log('🔐 Usuario autenticado en Firebase:', user.email);
+    } else {
+      console.log('👤 No hay usuario autenticado en Firebase');
+    }
+  });
 };
 
 // Función para verificar la conectividad con Firebase (no crítica)
@@ -178,6 +206,9 @@ export const initializeFirebaseCollections = async () => {
   try {
     console.log('🔄 Inicializando Firebase en background...');
     
+    // Configurar listener de autenticación
+    setupAuthListener();
+    
     // Ejecutar en background sin bloquear la UI
     setTimeout(async () => {
       try {
@@ -217,5 +248,6 @@ export default {
   initializeFirebaseCollections,
   checkFirebaseConnection,
   ensureAuthUser,
+  setupAuthListener,
   COLLECTIONS
 };

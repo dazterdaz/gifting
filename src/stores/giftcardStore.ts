@@ -15,6 +15,7 @@ import {
 import { db } from '../lib/firebase';
 import { Giftcard, GiftcardStatus, GiftcardSearchFilters, PublicGiftcardView } from '../types';
 import { generateGiftcardNumber } from '../lib/utils';
+import { useAuthStore } from './authStore';
 
 // Convertir documento de Firestore a Giftcard
 const convertFirestoreToGiftcard = (doc: any): Giftcard => {
@@ -140,6 +141,14 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Asegurar autenticación en Firebase antes de crear
+      const authStore = useAuthStore.getState();
+      const isFirebaseAuthenticated = await authStore.ensureFirebaseAuth();
+      
+      if (!isFirebaseAuthenticated) {
+        console.warn('⚠️ No se pudo autenticar en Firebase, continuando con reglas abiertas...');
+      }
+      
       let existingNumbers: string[] = [];
       
       try {
@@ -200,10 +209,29 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       let errorMessage = 'Error al crear la tarjeta de regalo';
       
-      if (error.code === 'permission-denied') {
-        errorMessage = 'Error de permisos. Verifique su autenticación.';
+      if (error.code === 'permission-denied' || error.code === 'unauthenticated') {
+        console.log('🔐 Error de permisos, intentando reautenticar...');
+        
+        // Intentar reautenticar y reintentar
+        try {
+          const authStore = useAuthStore.getState();
+          const reauth = await authStore.ensureFirebaseAuth();
+          
+          if (reauth) {
+            console.log('🔄 Reautenticado, reintentando creación...');
+            // Reintentar la operación una vez
+            return await get().createGiftcard(giftcardData);
+          } else {
+            errorMessage = 'Error de autenticación. Por favor, cierre sesión e inicie nuevamente.';
+          }
+        } catch (reauthError) {
+          console.error('❌ Error en reautenticación:', reauthError);
+          errorMessage = 'Error de permisos. Verifique su sesión.';
+        }
       } else if (error.code === 'unavailable') {
         errorMessage = 'Servicio no disponible. Intente nuevamente.';
+      } else if (error.code === 'network-request-failed') {
+        errorMessage = 'Error de conexión. Verifique su internet.';
       } else if (error.message) {
         errorMessage = error.message;
       }
