@@ -32,19 +32,14 @@ const Dashboard = () => {
   useEffect(() => {
     console.log('🏠 Inicializando Dashboard...');
     
-    const initializeDashboard = async () => {
-      try {
-        await Promise.all([
-          fetchGiftcards(),
-          fetchRecentActivities(5)
-        ]);
-        console.log('✅ Dashboard inicializado correctamente');
-      } catch (error) {
-        console.error('❌ Error inicializando Dashboard:', error);
-      }
-    };
+    // Cargar datos del dashboard de forma no bloqueante
+    fetchGiftcards().catch(error => {
+      console.warn('⚠️ Error cargando giftcards en dashboard:', error);
+    });
     
-    initializeDashboard();
+    fetchRecentActivities(5).catch(error => {
+      console.warn('⚠️ Error cargando actividades en dashboard:', error);
+    });
   }, [fetchGiftcards, fetchRecentActivities]);
   
   useEffect(() => {

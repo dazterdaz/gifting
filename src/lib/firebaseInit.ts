@@ -150,7 +150,7 @@ export const initializeFirebaseCollections = async () => {
     console.error('❌ Error inicializando colecciones de Firebase:', error);
     
     // Si hay error de permisos, no fallar completamente
-    if (error.code === 'permission-denied') {
+    if ((error as any).code === 'permission-denied') {
       console.log('⚠️ Permisos insuficientes para inicializar Firebase, continuando...');
       return false;
     }
@@ -180,7 +180,7 @@ export const checkFirebaseConnection = async () => {
     console.error('❌ Error de conexión con Firebase:', error);
     
     // Si hay error de permisos, aún consideramos que hay conexión
-    if (error.code === 'permission-denied') {
+    if ((error as any).code === 'permission-denied') {
       console.log('⚠️ Conexión establecida pero con permisos limitados');
       return true;
     }

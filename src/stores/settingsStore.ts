@@ -165,7 +165,9 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
 
   fetchSettings: async () => {
     console.log('⚙️ Cargando configuración desde Firebase...');
-    set({ loading: true, error: null });
+    
+    // Establecer configuración por defecto inmediatamente
+    set({ settings: defaultSettings, loading: true, error: null });
     
     try {
       const docRef = doc(db, 'settings', 'site-config');
@@ -179,7 +181,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
         console.log('✅ Configuración cargada desde Firebase');
         set({ settings, loading: false });
       } else {
-        // Si no existe, crear configuración por defecto
+        // Si no existe, intentar crear configuración por defecto
         console.log('📝 Creando configuración por defecto en Firebase...');
         
         try {
@@ -187,7 +189,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
           await setDoc(docRef, firestoreData);
           console.log('✅ Configuración por defecto creada en Firebase');
           set({ settings: defaultSettings, loading: false });
-        } catch (createError) {
+        } catch (createError: any) {
           console.warn('⚠️ No se pudo crear configuración en Firebase, usando configuración local:', createError);
           set({ settings: defaultSettings, loading: false });
         }
@@ -196,7 +198,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       console.error('❌ Error cargando configuración desde Firebase:', error);
       
       // Si hay error de permisos o conexión, usar configuración por defecto
-      if (error.code === 'permission-denied' || error.code === 'unavailable') {
+      if ((error as any).code === 'permission-denied' || (error as any).code === 'unavailable') {
         console.log('🔄 Usando configuración por defecto debido a problemas de conexión/permisos');
         set({ settings: defaultSettings, loading: false, error: null });
       } else {
@@ -213,10 +215,12 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     console.log('⚙️ Actualizando configuración en Firebase...');
     set({ loading: true, error: null });
     
+    // Actualizar estado local inmediatamente para mejor UX
+    const currentSettings = get().settings;
+    const updatedSettings = { ...currentSettings, ...newSettings };
+    set({ settings: updatedSettings });
+    
     try {
-      const currentSettings = get().settings;
-      const updatedSettings = { ...currentSettings, ...newSettings };
-      
       // Actualizar en Firebase
       const docRef = doc(db, 'settings', 'site-config');
       const firestoreData = convertSettingsToFirestore(updatedSettings);
@@ -224,12 +228,11 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       
       console.log('✅ Configuración actualizada en Firebase');
       
-      set({ 
-        settings: updatedSettings,
-        loading: false 
-      });
+      set({ loading: false });
     } catch (error) {
       console.error('❌ Error actualizando configuración en Firebase:', error);
+      // Revertir cambios locales si falla Firebase
+      set({ settings: currentSettings });
       set({ error: 'Error al actualizar la configuración', loading: false });
       throw error;
     }
