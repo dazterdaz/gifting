@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, AlertCircle, TicketCheck, Users, Gift, Clock, ChevronRight, Plus, Settings } from 'lucide-react';
+import { CreditCard, AlertCircle, TicketCheck, Users, Gift, Clock, ChevronRight, Plus, Settings, Mail } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import ActivityList from '../components/giftcards/ActivityList';
