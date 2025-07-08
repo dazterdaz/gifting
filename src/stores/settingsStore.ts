@@ -208,14 +208,6 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       }
     }
   },
-        console.log('✅ Configuración por defecto creada en Firebase');
-        set({ settings: defaultSettings, loading: false });
-      }
-    } catch (error) {
-      console.error('❌ Error cargando configuración desde Firebase:', error);
-      set({ error: 'Error al cargar la configuración', loading: false });
-    }
-  },
 
   updateSettings: async (newSettings: Partial<SiteSettings>) => {
     console.log('⚙️ Actualizando configuración en Firebase...');
