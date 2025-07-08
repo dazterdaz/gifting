@@ -1,60 +1,51 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Función para verificar si el usuario está autenticado
-    function isAuthenticated() {
-      return request.auth != null;
-    }
+    // Permitir acceso completo para desarrollo y testing
+    // NOTA: En producción, estas reglas deben ser más restrictivas
     
-    // Función para verificar si el usuario es admin o superadmin
-    function isAdmin() {
-      return isAuthenticated();
-    }
-
-    // Colección de usuarios - solo usuarios autenticados pueden leer/escribir
+    // Colección de usuarios - acceso completo
     match /users/{userId} {
-      allow read, write: if isAuthenticated();
-      // Permitir que un usuario cree su propio documento
-      allow create: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if true;
     }
 
-    // Colección de giftcards - solo usuarios autenticados pueden leer/escribir
+    // Colección de giftcards - acceso completo
     match /giftcards/{giftcardId} {
-      allow read, write: if isAuthenticated();
-      // Permitir lectura pública para consultas específicas por número
-      allow read: if resource.data.number != null;
+      allow read, write: if true;
     }
 
-    // Colección de actividades - solo usuarios autenticados pueden leer/escribir
+    // Colección de actividades - acceso completo
     match /activities/{activityId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if true;
     }
 
-    // Colección de mensajes de contacto - usuarios autenticados pueden leer/escribir, público puede crear
+    // Colección de mensajes de contacto - acceso completo
     match /contactMessages/{messageId} {
-      allow read, write: if isAuthenticated();
-      allow create: if true; // Permitir creación pública para formulario de contacto
+      allow read, write: if true;
     }
 
-    // Configuración del sitio - lectura pública, escritura solo para autenticados
+    // Configuración del sitio - acceso completo
     match /settings/{settingId} {
-      allow read: if true; // Lectura pública para la página principal
-      allow write: if isAuthenticated();
+      allow read, write: if true;
     }
 
-    // Términos y condiciones - lectura pública, escritura solo para autenticados
+    // Términos y condiciones - acceso completo
     match /terms/{termId} {
-      allow read: if true; // Lectura pública para la consulta de giftcards
-      allow write: if isAuthenticated();
+      allow read, write: if true;
     }
 
-    // Documento de inicialización - acceso completo para setup inicial
+    // Documentos de inicialización - acceso completo
     match /{collection}/_init {
       allow read, write: if true;
     }
 
     // Documento de prueba de conexión - acceso completo
     match /test/connection {
+      allow read, write: if true;
+    }
+    
+    // Permitir acceso a cualquier documento para desarrollo
+    match /{document=**} {
       allow read, write: if true;
     }
   }

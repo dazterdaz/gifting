@@ -16,15 +16,15 @@ import { auth } from './firebase';
 // Función para crear usuario de autenticación si no existe (ejecutar en background)
 export const ensureAuthUser = async () => {
   try {
-    console.log('👤 Verificando configuración de usuario...');
+    console.log('👤 Configurando autenticación en background...');
     
     const email = 'demian.83@hotmail.es';
     const password = '@Llamasami1';
     
     try {
-      // Intentar crear el usuario
+      // Intentar crear el usuario de autenticación
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('✅ Usuario configurado correctamente');
+      console.log('✅ Usuario de autenticación creado');
       
       // Crear documento de usuario en Firestore
       const userRef = doc(db, 'users', userCredential.user.uid);
@@ -37,7 +37,7 @@ export const ensureAuthUser = async () => {
         isActive: true
       });
       
-      console.log('✅ Perfil de usuario creado');
+      console.log('✅ Documento de usuario creado en Firestore');
       
       // Cerrar sesión después de crear
       await auth.signOut();
@@ -46,16 +46,16 @@ export const ensureAuthUser = async () => {
       
     } catch (createError) {
       if (createError.code === 'auth/email-already-in-use') {
-        console.log('ℹ️ Usuario ya configurado');
+        console.log('ℹ️ Usuario de autenticación ya existe');
         return null;
       } else {
-        console.warn('⚠️ Error en configuración de usuario:', createError);
+        console.warn('⚠️ Error configurando autenticación:', createError.code);
         return null;
       }
     }
     
   } catch (error) {
-    console.warn('⚠️ Error en inicialización de usuario:', error);
+    console.warn('⚠️ Error en configuración de autenticación:', error.code || error.message);
     return null;
   }
 };

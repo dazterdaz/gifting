@@ -49,7 +49,12 @@ const GiftcardCreateForm: React.FC = () => {
   const onSubmit = async (data: GiftcardFormValues) => {
     if (!user) return;
     
-    console.log('📝 Creando nueva tarjeta de regalo...');
+    console.log('📝 Iniciando creación de tarjeta de regalo...');
+    console.log('📋 Datos del formulario:', {
+      buyerName: data.buyerName,
+      amount: data.amount,
+      duration: data.duration
+    });
     
     setIsSubmitting(true);
     try {
@@ -68,9 +73,10 @@ const GiftcardCreateForm: React.FC = () => {
         duration: data.duration ? parseInt(data.duration.toString()) : 90
       };
       
+      console.log('🚀 Enviando datos a createGiftcard...');
       const newGiftcard = await createGiftcard(giftcardData);
       
-      console.log('✅ Tarjeta de regalo creada exitosamente');
+      console.log('✅ Tarjeta de regalo creada exitosamente:', newGiftcard.number);
       
       // Intentar registrar actividad, pero no fallar si hay error
       try {
@@ -82,19 +88,28 @@ const GiftcardCreateForm: React.FC = () => {
           targetId: newGiftcard.id,
           details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration || 90} días`
         });
+        console.log('📝 Actividad registrada correctamente');
       } catch (activityError) {
         console.warn('⚠️ Error registrando actividad:', activityError);
       }
       
-      toast.success(t('common.success'), {
+      toast.success(`¡Tarjeta ${newGiftcard.number} creada exitosamente!`, {
         duration: 3000,
       });
       
       navigate('/giftcards');
       
     } catch (error) {
-      console.error('Error creating giftcard:', error);
-      toast.error(t('common.error'), {
+      console.error('❌ Error en el formulario:', error);
+      
+      let errorMessage = 'Error al crear la tarjeta de regalo';
+      if (error.message && error.message.includes('permission')) {
+        errorMessage = 'Error de permisos. Verifique su sesión.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, {
         duration: 3000,
       });
     } finally {

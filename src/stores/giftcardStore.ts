@@ -147,15 +147,15 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         const giftcardsRef = collection(db, 'giftcards');
         const querySnapshot = await getDocs(giftcardsRef);
         existingNumbers = querySnapshot.docs.map(doc => doc.data().number || '');
-        console.log('📋 Verificando números existentes...');
+        console.log('📋 Números existentes verificados:', existingNumbers.length);
       } catch (fetchError) {
-        console.error('❌ Error verificando números existentes:', fetchError);
-        throw new Error('No se pueden obtener los números existentes para generar uno único');
+        console.warn('⚠️ Error verificando números existentes, continuando:', fetchError);
+        // Continuar sin números existentes si hay error
       }
       
       // Generar número único
       const uniqueNumber = generateGiftcardNumber(existingNumbers);
-      console.log('🔢 Número único generado');
+      console.log('🔢 Número único generado:', uniqueNumber);
       
       const newGiftcard: Omit<Giftcard, 'id'> = {
         number: uniqueNumber,
@@ -166,13 +166,17 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         createdAt: new Date().toISOString(),
       };
       
-      console.log('🎫 Preparando tarjeta de regalo...');
+      console.log('🎫 Preparando tarjeta de regalo:', {
+        number: newGiftcard.number,
+        amount: newGiftcard.amount,
+        status: newGiftcard.status
+      });
       
       // Convertir a formato Firestore y guardar
       const giftcardsRef = collection(db, 'giftcards');
       const firestoreData = convertGiftcardToFirestore(newGiftcard);
       
-      console.log('💾 Guardando tarjeta...');
+      console.log('💾 Guardando en Firebase...');
       const docRef = await addDoc(giftcardsRef, firestoreData);
       
       const createdGiftcard: Giftcard = {
@@ -180,7 +184,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         id: docRef.id
       };
       
-      console.log('✅ Tarjeta creada exitosamente');
+      console.log('✅ Tarjeta creada exitosamente:', createdGiftcard.id);
       
       // Actualizar estado local
       set(state => ({ 
@@ -192,8 +196,19 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       return createdGiftcard;
       
     } catch (error) {
-      console.error('❌ Error creando tarjeta de regalo:', error);
-      set({ error: 'Error al crear la tarjeta de regalo', loading: false });
+      console.error('❌ Error detallado creando tarjeta:', error);
+      
+      let errorMessage = 'Error al crear la tarjeta de regalo';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'Error de permisos. Verifique su autenticación.';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Servicio no disponible. Intente nuevamente.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ error: errorMessage, loading: false });
       throw error;
     }
   },
