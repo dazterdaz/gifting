@@ -22,10 +22,17 @@ service cloud.firestore {
 
     // Colección de usuarios - solo superadmin puede modificar
     match /users/{userId} {
+      // Permitir creación sin autenticación del usuario administrador por defecto
+      allow create: if userId == 'admin-demian' && request.auth == null;
+      
+      // Permitir lectura sin autenticación del usuario administrador por defecto (para verificación inicial)
+      allow read: if userId == 'admin-demian' && request.auth == null;
+
+      // Permitir lectura autenticada para todos los usuarios
       allow read: if isAuthenticated();
+      
+      // Permitir escritura (actualización/eliminación) solo para superadmin
       allow write: if isSuperAdmin();
-      // Permitir creación del usuario administrador por defecto durante la inicialización
-      allow read, create: if userId == 'admin-demian';
     }
 
     // Colección de giftcards - admin y superadmin pueden leer/escribir
