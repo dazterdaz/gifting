@@ -1,63 +1,57 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { Giftcard, GiftcardStatus, GiftcardSearchFilters, PublicGiftcardView } from '../types';
 import { generateGiftcardNumber } from '../lib/utils';
 
-// Convertir documento de Firestore a Giftcard
-const convertFirestoreToGiftcard = (doc: any): Giftcard => {
-  const data = doc.data();
+// Convertir fila de Supabase a Giftcard
+const convertSupabaseToGiftcard = (row: any): Giftcard => {
   return {
-    id: doc.id,
-    ...data,
-    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-    deliveredAt: data.deliveredAt?.toDate?.()?.toISOString() || data.deliveredAt,
-    expiresAt: data.expiresAt?.toDate?.()?.toISOString() || data.expiresAt,
-    redeemedAt: data.redeemedAt?.toDate?.()?.toISOString() || data.redeemedAt,
-    cancelledAt: data.cancelledAt?.toDate?.()?.toISOString() || data.cancelledAt,
-    termsAcceptedAt: data.termsAcceptedAt?.toDate?.()?.toISOString() || data.termsAcceptedAt,
+    id: row.id,
+    number: row.number,
+    buyer: {
+      name: row.buyer_name,
+      email: row.buyer_email,
+      phone: row.buyer_phone
+    },
+    recipient: {
+      name: row.recipient_name,
+      email: row.recipient_email,
+      phone: row.recipient_phone
+    },
+    amount: row.amount,
+    status: row.status,
+    createdAt: row.created_at,
+    deliveredAt: row.delivered_at,
+    expiresAt: row.expires_at,
+    redeemedAt: row.redeemed_at,
+    cancelledAt: row.cancelled_at,
+    notes: row.notes,
+    artist: row.artist,
+    termsAcceptedAt: row.terms_accepted_at
   };
 };
 
-// Convertir Giftcard a formato Firestore
-const convertGiftcardToFirestore = (giftcard: Partial<Giftcard>) => {
-  const data = { ...giftcard };
-  
-  // Convertir fechas a Timestamp de Firestore
-  if (data.createdAt) {
-    data.createdAt = Timestamp.fromDate(new Date(data.createdAt));
-  }
-  if (data.deliveredAt) {
-    data.deliveredAt = Timestamp.fromDate(new Date(data.deliveredAt));
-  }
-  if (data.expiresAt) {
-    data.expiresAt = Timestamp.fromDate(new Date(data.expiresAt));
-  }
-  if (data.redeemedAt) {
-    data.redeemedAt = Timestamp.fromDate(new Date(data.redeemedAt));
-  }
-  if (data.cancelledAt) {
-    data.cancelledAt = Timestamp.fromDate(new Date(data.cancelledAt));
-  }
-  if (data.termsAcceptedAt) {
-    data.termsAcceptedAt = Timestamp.fromDate(new Date(data.termsAcceptedAt));
-  }
-  
-  // Remover el ID ya que Firestore lo maneja automáticamente
-  delete data.id;
-  return data;
+// Convertir Giftcard a formato Supabase
+const convertGiftcardToSupabase = (giftcard: Partial<Giftcard>) => {
+  return {
+    number: giftcard.number,
+    buyer_name: giftcard.buyer?.name,
+    buyer_email: giftcard.buyer?.email,
+    buyer_phone: giftcard.buyer?.phone,
+    recipient_name: giftcard.recipient?.name,
+    recipient_email: giftcard.recipient?.email,
+    recipient_phone: giftcard.recipient?.phone,
+    amount: giftcard.amount,
+    status: giftcard.status,
+    created_at: giftcard.createdAt,
+    delivered_at: giftcard.deliveredAt,
+    expires_at: giftcard.expiresAt,
+    redeemed_at: giftcard.redeemedAt,
+    cancelled_at: giftcard.cancelledAt,
+    notes: giftcard.notes,
+    artist: giftcard.artist,
+    terms_accepted_at: giftcard.termsAcceptedAt
+  };
 };
 
 interface GiftcardState {
@@ -89,17 +83,20 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
   error: null,
   
   fetchGiftcards: async () => {
-    console.log('🎫 Cargando giftcards desde Firebase...');
+    console.log('🎫 Cargando giftcards desde Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('giftcards')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      const giftcards = querySnapshot.docs.map(convertFirestoreToGiftcard);
+      if (error) throw error;
       
-      console.log('✅ Giftcards cargadas desde Firebase:', giftcards.length);
+      const giftcards = data.map(convertSupabaseToGiftcard);
+      
+      console.log('✅ Giftcards cargadas desde Supabase:', giftcards.length);
       
       set({ 
         giftcards, 
@@ -107,21 +104,26 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         loading: false 
       });
     } catch (error) {
-      console.error('❌ Error cargando giftcards desde Firebase:', error);
+      console.error('❌ Error cargando giftcards desde Supabase:', error);
       set({ error: 'Error al cargar las tarjetas de regalo', loading: false });
     }
   },
   
   getGiftcardById: async (id: string) => {
-    console.log('🔍 Buscando giftcard en Firebase:', id);
+    console.log('🔍 Buscando giftcard en Supabase:', id);
     set({ loading: true, error: null });
     
     try {
-      const docRef = doc(db, 'giftcards', id);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase
+        .from('giftcards')
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      if (docSnap.exists()) {
-        const giftcard = convertFirestoreToGiftcard(docSnap);
+      if (error) throw error;
+      
+      if (data) {
+        const giftcard = convertSupabaseToGiftcard(data);
         console.log('🎫 Giftcard encontrada:', giftcard.number);
         set({ selectedGiftcard: giftcard, loading: false });
       } else {
@@ -129,40 +131,67 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         set({ selectedGiftcard: null, loading: false });
       }
     } catch (error) {
-      console.error('❌ Error buscando giftcard en Firebase:', error);
+      console.error('❌ Error buscando giftcard en Supabase:', error);
       set({ error: 'Error al cargar los detalles de la tarjeta', loading: false });
     }
   },
   
   createGiftcard: async (giftcardData: any) => {
-    console.log('➕ Creando nueva giftcard en Firebase...');
+    console.log('➕ Creando nueva giftcard en Supabase...');
     set({ loading: true, error: null });
     
     try {
-      // Obtener números existentes para generar uno único
-      const giftcardsRef = collection(db, 'giftcards');
-      const querySnapshot = await getDocs(giftcardsRef);
-      const existingNumbers = querySnapshot.docs.map(doc => doc.data().number);
+      let giftcardNumber: string;
       
-      const newGiftcard: Omit<Giftcard, 'id'> = {
-        number: generateGiftcardNumber(existingNumbers),
-        buyer: giftcardData.buyer,
-        recipient: giftcardData.recipient,
+      if (giftcardData.customNumber) {
+        // Verificar que el número personalizado no exista
+        const { data: existingCard } = await supabase
+          .from('giftcards')
+          .select('number')
+          .eq('number', giftcardData.customNumber)
+          .maybeSingle();
+        
+        if (existingCard) {
+          throw new Error(`El número ${giftcardData.customNumber} ya existe. Por favor use otro número.`);
+        }
+        
+        giftcardNumber = giftcardData.customNumber;
+        console.log('🔢 Usando número personalizado:', giftcardNumber);
+      } else {
+        // Generar número automáticamente
+        const { data: existingGiftcards } = await supabase
+          .from('giftcards')
+          .select('number');
+        
+        const existingNumbers = existingGiftcards?.map(g => g.number) || [];
+        giftcardNumber = generateGiftcardNumber(existingNumbers);
+        console.log('🎲 Número generado automáticamente:', giftcardNumber);
+      }
+      
+      const newGiftcard = {
+        number: giftcardNumber,
+        buyer_name: giftcardData.buyer.name,
+        buyer_email: giftcardData.buyer.email,
+        buyer_phone: giftcardData.buyer.phone,
+        recipient_name: giftcardData.recipient.name,
+        recipient_email: giftcardData.recipient.email,
+        recipient_phone: giftcardData.recipient.phone,
         amount: giftcardData.amount,
-        status: 'created_not_delivered',
-        createdAt: new Date().toISOString(),
+        status: 'created_not_delivered' as GiftcardStatus,
+        created_at: new Date().toISOString()
       };
       
-      // Convertir a formato Firestore y guardar
-      const firestoreData = convertGiftcardToFirestore(newGiftcard);
-      const docRef = await addDoc(giftcardsRef, firestoreData);
+      const { data, error } = await supabase
+        .from('giftcards')
+        .insert([newGiftcard])
+        .select()
+        .single();
       
-      const createdGiftcard: Giftcard = {
-        ...newGiftcard,
-        id: docRef.id
-      };
+      if (error) throw error;
       
-      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
+      const createdGiftcard = convertSupabaseToGiftcard(data);
+      
+      console.log('✅ Giftcard creada en Supabase:', createdGiftcard.number);
       
       // Actualizar estado local
       set(state => ({ 
@@ -173,40 +202,42 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       return createdGiftcard;
     } catch (error) {
-      console.error('❌ Error creando giftcard en Firebase:', error);
+      console.error('❌ Error creando giftcard en Supabase:', error);
       set({ error: 'Error al crear la tarjeta de regalo', loading: false });
       throw error;
     }
   },
   
   updateGiftcardStatus: async (id: string, status: GiftcardStatus, notes?: string, artist?: string) => {
-    console.log('🔄 Actualizando estado de giftcard en Firebase:', id, 'a', status);
-    set({ loading: true, error: null });
+    console.log('🔄 Actualizando estado de giftcard en Supabase:', id, 'a', status);
+    set({ error: null });
     
     try {
       const now = new Date().toISOString();
       const updateData: any = { status };
       
       if (status === 'delivered') {
-        updateData.deliveredAt = now;
+        updateData.delivered_at = now;
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 90);
-        updateData.expiresAt = expiryDate.toISOString();
+        updateData.expires_at = expiryDate.toISOString();
       } else if (status === 'redeemed') {
-        updateData.redeemedAt = now;
+        updateData.redeemed_at = now;
         if (notes) updateData.notes = notes;
         if (artist) updateData.artist = artist;
       } else if (status === 'cancelled') {
-        updateData.cancelledAt = now;
+        updateData.cancelled_at = now;
         if (notes) updateData.notes = notes;
       }
       
-      // Actualizar en Firebase
-      const docRef = doc(db, 'giftcards', id);
-      const firestoreData = convertGiftcardToFirestore(updateData);
-      await updateDoc(docRef, firestoreData);
+      const { error } = await supabase
+        .from('giftcards')
+        .update(updateData)
+        .eq('id', id);
       
-      console.log('✅ Estado actualizado en Firebase');
+      if (error) throw error;
+      
+      console.log('✅ Estado actualizado en Supabase');
       
       // Actualizar estado local
       set(state => {
@@ -220,19 +251,18 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
           selectedGiftcard: state.selectedGiftcard?.id === id 
             ? { ...state.selectedGiftcard, ...updateData } 
             : state.selectedGiftcard,
-          loading: false
         };
       });
     } catch (error) {
-      console.error('❌ Error actualizando estado en Firebase:', error);
-      set({ error: 'Error al actualizar el estado de la tarjeta', loading: false });
+      console.error('❌ Error actualizando estado en Supabase:', error);
+      set({ error: 'Error al actualizar el estado de la tarjeta' });
       throw error;
     }
   },
   
   extendExpiration: async (id: string, days: number) => {
-    console.log('📅 Extendiendo vencimiento en Firebase:', id, days, 'días');
-    set({ loading: true, error: null });
+    console.log('📅 Extendiendo vencimiento en Supabase:', id, days, 'días');
+    set({ error: null });
     
     try {
       const { selectedGiftcard } = get();
@@ -244,13 +274,14 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       currentExpiry.setDate(currentExpiry.getDate() + days);
       const newExpiresAt = currentExpiry.toISOString();
       
-      // Actualizar en Firebase
-      const docRef = doc(db, 'giftcards', id);
-      await updateDoc(docRef, {
-        expiresAt: Timestamp.fromDate(new Date(newExpiresAt))
-      });
+      const { error } = await supabase
+        .from('giftcards')
+        .update({ expires_at: newExpiresAt })
+        .eq('id', id);
       
-      console.log('✅ Vencimiento extendido en Firebase');
+      if (error) throw error;
+      
+      console.log('✅ Vencimiento extendido en Supabase');
       
       // Actualizar estado local
       set(state => {
@@ -264,68 +295,61 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
           selectedGiftcard: state.selectedGiftcard?.id === id 
             ? { ...state.selectedGiftcard, expiresAt: newExpiresAt } 
             : state.selectedGiftcard,
-          loading: false
         };
       });
     } catch (error) {
-      console.error('❌ Error extendiendo vencimiento en Firebase:', error);
-      set({ error: 'Error al extender la fecha de vencimiento', loading: false });
+      console.error('❌ Error extendiendo vencimiento en Supabase:', error);
+      set({ error: 'Error al extender la fecha de vencimiento' });
       throw error;
     }
   },
   
   deleteGiftcard: async (id: string) => {
-    console.log('🗑️ Eliminando giftcard de Firebase:', id);
-    set({ loading: true, error: null });
+    console.log('🗑️ Eliminando giftcard de Supabase:', id);
+    set({ error: null });
     
     try {
-      // Eliminar de Firebase
-      const docRef = doc(db, 'giftcards', id);
-      await deleteDoc(docRef);
+      const { error } = await supabase
+        .from('giftcards')
+        .delete()
+        .eq('id', id);
       
-      console.log('✅ Giftcard eliminada de Firebase');
+      if (error) throw error;
+      
+      console.log('✅ Giftcard eliminada de Supabase');
       
       // Actualizar estado local
       set(state => ({
         giftcards: state.giftcards.filter(g => g.id !== id),
         filteredGiftcards: state.filteredGiftcards.filter(g => g.id !== id),
         selectedGiftcard: state.selectedGiftcard?.id === id ? null : state.selectedGiftcard,
-        loading: false
       }));
     } catch (error) {
-      console.error('❌ Error eliminando giftcard de Firebase:', error);
-      set({ error: 'Error al eliminar la tarjeta de regalo', loading: false });
+      console.error('❌ Error eliminando giftcard de Supabase:', error);
+      set({ error: 'Error al eliminar la tarjeta de regalo' });
       throw error;
     }
   },
   
   acceptTerms: async (number: string) => {
-    console.log('📋 Aceptando términos en Firebase para:', number);
+    console.log('📋 Aceptando términos en Supabase para:', number);
     
     try {
-      // Buscar la giftcard por número
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, where('number', '==', number));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        throw new Error('Tarjeta no encontrada');
-      }
-      
-      const giftcardDoc = querySnapshot.docs[0];
       const termsAcceptedAt = new Date().toISOString();
       
-      // Actualizar en Firebase
-      await updateDoc(giftcardDoc.ref, {
-        termsAcceptedAt: Timestamp.fromDate(new Date(termsAcceptedAt))
-      });
+      const { error } = await supabase
+        .from('giftcards')
+        .update({ terms_accepted_at: termsAcceptedAt })
+        .eq('number', number);
       
-      console.log('✅ Términos aceptados en Firebase');
+      if (error) throw error;
+      
+      console.log('✅ Términos aceptados en Supabase');
       
       // Actualizar estado local
       set(state => {
         const updatedGiftcards = state.giftcards.map(g => 
-          g.id === giftcardDoc.id ? { ...g, termsAcceptedAt } : g
+          g.number === number ? { ...g, termsAcceptedAt } : g
         );
         
         return {
@@ -334,40 +358,42 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         };
       });
     } catch (error) {
-      console.error('❌ Error aceptando términos en Firebase:', error);
+      console.error('❌ Error aceptando términos en Supabase:', error);
       throw new Error('Error al aceptar los términos y condiciones');
     }
   },
 
   getPublicGiftcardInfo: async (number: string): Promise<PublicGiftcardView | null> => {
-    console.log('🔍 Consultando giftcard pública en Firebase:', number);
+    console.log('🔍 Consultando giftcard pública en Supabase:', number);
     
     try {
-      // Buscar por número en Firebase
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, where('number', '==', number));
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('giftcards')
+        .select('number, amount, status, delivered_at, expires_at, terms_accepted_at')
+        .eq('number', number)
+        .single();
       
-      if (querySnapshot.empty) {
-        console.log('❌ Giftcard no encontrada en Firebase');
-        return null;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No encontrado
+          console.log('❌ Giftcard no encontrada en Supabase');
+          return null;
+        }
+        throw error;
       }
       
-      const giftcardDoc = querySnapshot.docs[0];
-      const giftcard = convertFirestoreToGiftcard(giftcardDoc);
-      
-      console.log('✅ Información pública obtenida de Firebase');
+      console.log('✅ Información pública obtenida de Supabase');
       
       return {
-        number: giftcard.number,
-        amount: giftcard.amount,
-        status: giftcard.status,
-        deliveredAt: giftcard.deliveredAt,
-        expiresAt: giftcard.expiresAt,
-        termsAcceptedAt: giftcard.termsAcceptedAt
+        number: data.number,
+        amount: data.amount,
+        status: data.status,
+        deliveredAt: data.delivered_at,
+        expiresAt: data.expires_at,
+        termsAcceptedAt: data.terms_accepted_at
       };
     } catch (error) {
-      console.error('❌ Error consultando giftcard pública en Firebase:', error);
+      console.error('❌ Error consultando giftcard pública en Supabase:', error);
       throw new Error('Error al consultar información de la tarjeta');
     }
   },

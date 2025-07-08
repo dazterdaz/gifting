@@ -1,14 +1,13 @@
 import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import ContactFooter from './ContactFooter';
+import { useEffect } from 'react';
 
 const Layout = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { t } = useTranslation();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -51,17 +50,7 @@ const Layout = () => {
           <Outlet />
         </main>
         
-        <footer className="p-4 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>
-            Daz Giftcard Register &copy; {new Date().getFullYear()} | {' '}
-            <Link 
-              to="/buscar" 
-              className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline"
-            >
-              {t('giftcards.public.title')}
-            </Link>
-          </p>
-        </footer>
+        <ContactFooter />
       </div>
     </div>
   );

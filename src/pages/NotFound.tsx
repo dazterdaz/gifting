@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Home, X } from 'lucide-react';
+import ContactFooter from '../components/layout/ContactFooter';
 import Button from '../components/ui/Button';
 
 const NotFound = () => {
@@ -28,6 +29,8 @@ const NotFound = () => {
           </Link>
         </div>
       </div>
+      
+      <ContactFooter />
     </div>
   );
 };

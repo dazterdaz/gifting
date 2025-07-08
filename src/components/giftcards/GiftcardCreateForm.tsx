@@ -6,6 +6,7 @@ import { Save, ArrowLeft } from 'lucide-react';
 import { useGiftcardStore } from '../../stores/giftcardStore';
 import { useActivityStore } from '../../stores/activityStore';
 import { useAuthStore } from '../../stores/authStore';
+import { getCurrentUser } from '../../lib/auth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
@@ -13,6 +14,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card
 import toast from 'react-hot-toast';
 
 interface GiftcardFormValues {
+  customNumber?: string;
   buyerName: string;
   buyerEmail: string;
   buyerPhone: string;
@@ -26,13 +28,14 @@ interface GiftcardFormValues {
 const GiftcardCreateForm: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user } = useAuthStore();
+  const { user, ensureFirebaseAuth } = useAuthStore();
   const { createGiftcard } = useGiftcardStore();
   const { logActivity } = useActivityStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { register, handleSubmit, formState: { errors } } = useForm<GiftcardFormValues>({
     defaultValues: {
+      customNumber: '',
       amount: 0,
       duration: 90
     }
@@ -47,7 +50,13 @@ const GiftcardCreateForm: React.FC = () => {
   ];
   
   const onSubmit = async (data: GiftcardFormValues) => {
-    if (!user) return;
+    const currentUser = getCurrentUser();
+    if (!currentUser) {
+      toast.error('No hay usuario autenticado');
+      return;
+    }
+    
+    console.log('📝 Iniciando creación de tarjeta de regalo...');
     
     setIsSubmitting(true);
     try {
@@ -63,29 +72,45 @@ const GiftcardCreateForm: React.FC = () => {
           phone: data.recipientPhone
         },
         amount: data.amount,
-        duration: parseInt(data.duration.toString())
+        duration: data.duration ? parseInt(data.duration.toString()) : 90
+      };
+      
+      // Si se especifica un número personalizado, usarlo
+      if (data.customNumber && data.customNumber.trim()) {
+        giftcardData.customNumber = data.customNumber.trim();
       };
       
       const newGiftcard = await createGiftcard(giftcardData);
       
-      await logActivity({
-        userId: user.id,
-        username: user.username,
-        action: 'created',
-        targetType: 'giftcard',
-        targetId: newGiftcard.id,
-        details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration} días`
-      });
+      console.log('✅ Tarjeta de regalo creada exitosamente:', newGiftcard.number);
       
-      toast.success(t('common.success'), {
+      // Intentar registrar actividad, pero no fallar si hay error
+      try {
+        await logActivity({
+          userId: currentUser.id,
+          username: currentUser.username,
+          action: 'created',
+          targetType: 'giftcard',
+          targetId: newGiftcard.id,
+          details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration || 90} días`
+        });
+        console.log('📝 Actividad registrada correctamente');
+      } catch (activityError) {
+        console.warn('⚠️ Error registrando actividad:', activityError);
+      }
+      
+      toast.success(`¡Tarjeta ${newGiftcard.number} creada exitosamente!`, {
         duration: 3000,
       });
       
       navigate('/giftcards');
       
     } catch (error) {
-      console.error('Error creating giftcard:', error);
-      toast.error(t('common.error'), {
+      console.error('❌ Error en el formulario:', error);
+      
+      const errorMessage = error.message || 'Error al crear la tarjeta de regalo';
+      
+      toast.error(errorMessage, {
         duration: 3000,
       });
     } finally {
@@ -101,6 +126,36 @@ const GiftcardCreateForm: React.FC = () => {
       <form onSubmit={handleSubmit(onSubmit)}>
         <CardContent>
           <div className="space-y-6">
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+              <h3 className="text-lg font-medium text-amber-900 dark:text-amber-100 mb-4">
+                ⚙️ Configuración de la Tarjeta
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Número personalizado (opcional)"
+                  {...register('customNumber', {
+                    pattern: {
+                      value: /^\d{8}$/,
+                      message: 'El número debe tener exactamente 8 dígitos'
+                    }
+                  })}
+                  error={errors.customNumber?.message}
+                  placeholder="12345678"
+                  maxLength={8}
+                />
+                
+                <Select
+                  label="Duración de la tarjeta"
+                  options={durationOptions}
+                  {...register('duration', { required: t('common.required') as string })}
+                  error={errors.duration?.message}
+                />
+              </div>
+              <p className="text-sm text-amber-700 dark:text-amber-300 mt-2">
+                💡 Si no especifica un número, se generará automáticamente uno único de 8 dígitos.
+              </p>
+            </div>
+            
             <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
                 {t('giftcards.details.buyerInfo')}
@@ -173,7 +228,7 @@ const GiftcardCreateForm: React.FC = () => {
               </div>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
               <Input
                 label={t('giftcards.form.amount')}
                 type="number"
@@ -186,13 +241,6 @@ const GiftcardCreateForm: React.FC = () => {
                 })}
                 leftAdornment={<span className="text-gray-400">$</span>}
                 error={errors.amount?.message}
-              />
-
-              <Select
-                label="Duración de la tarjeta"
-                options={durationOptions}
-                {...register('duration', { required: t('common.required') as string })}
-                error={errors.duration?.message}
               />
             </div>
           </div>

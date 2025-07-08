@@ -1,12 +1,5 @@
 import { create } from 'zustand';
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  updateDoc, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { SiteSettings, TermsAndConditions } from '../types';
 
 // Términos y condiciones por defecto
@@ -77,26 +70,6 @@ const defaultSettings: SiteSettings = {
   ]
 };
 
-// Convertir configuración a formato Firestore
-const convertSettingsToFirestore = (settings: SiteSettings) => {
-  const data = { ...settings };
-  
-  if (data.terms?.createdAt) {
-    data.terms.createdAt = Timestamp.fromDate(new Date(data.terms.createdAt));
-  }
-  
-  return data;
-};
-
-// Convertir documento de Firestore a configuración
-const convertFirestoreToSettings = (data: any): SiteSettings => {
-  if (data.terms?.createdAt && typeof data.terms.createdAt.toDate === 'function') {
-    data.terms.createdAt = data.terms.createdAt.toDate().toISOString();
-  }
-  
-  return data;
-};
-
 interface SettingsState {
   settings: SiteSettings;
   loading: boolean;
@@ -112,60 +85,115 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
   error: null,
 
   fetchSettings: async () => {
-    console.log('⚙️ Cargando configuración desde Firebase...');
-    set({ loading: true, error: null });
+    console.log('⚙️ Cargando configuración desde Supabase...');
+    set({ error: null });
     
     try {
-      const docRef = doc(db, 'settings', 'site-config');
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .eq('id', 'site-config')
+        .single();
       
-      if (docSnap.exists()) {
-        const settings = convertFirestoreToSettings(docSnap.data());
-        console.log('✅ Configuración cargada desde Firebase');
-        set({ settings, loading: false });
-      } else {
-        // Si no existe, crear configuración por defecto
-        console.log('📝 Creando configuración por defecto en Firebase...');
-        const firestoreData = convertSettingsToFirestore(defaultSettings);
-        await setDoc(docRef, firestoreData);
-        console.log('✅ Configuración por defecto creada en Firebase');
-        set({ settings: defaultSettings, loading: false });
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No existe, crear configuración por defecto
+          console.log('📝 Creando configuración por defecto en Supabase...');
+          
+          const defaultData = {
+            id: 'site-config',
+            site_name: defaultSettings.siteName,
+            logo_url: defaultSettings.logoUrl,
+            logo_color: defaultSettings.logoColor,
+            terms_content: defaultSettings.terms?.content,
+            contact_info: defaultSettings.contactInfo,
+            testimonials: defaultSettings.testimonials,
+            social_links: defaultSettings.socialLinks,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+          
+          const { error: insertError } = await supabase
+            .from('settings')
+            .insert([defaultData]);
+          
+          if (insertError) throw insertError;
+          
+          console.log('✅ Configuración por defecto creada en Supabase');
+          set({ settings: defaultSettings });
+          return;
+        }
+        throw error;
+      }
+      
+      if (data) {
+        const settings: SiteSettings = {
+          siteName: data.site_name,
+          logoUrl: data.logo_url,
+          logoColor: data.logo_color,
+          terms: data.terms_content ? {
+            id: 'default-terms',
+            content: data.terms_content,
+            createdAt: data.created_at,
+            createdBy: 'Sistema',
+            isActive: true
+          } : defaultTerms,
+          contactInfo: data.contact_info || defaultSettings.contactInfo,
+          testimonials: data.testimonials || defaultSettings.testimonials,
+          socialLinks: data.social_links || defaultSettings.socialLinks
+        };
+        
+        console.log('✅ Configuración cargada desde Supabase');
+        set({ settings });
       }
     } catch (error) {
-      console.error('❌ Error cargando configuración desde Firebase:', error);
-      set({ error: 'Error al cargar la configuración', loading: false });
+      console.error('❌ Error cargando configuración desde Supabase:', error);
+      
+      // Si hay error, usar configuración por defecto
+      console.log('🔄 Usando configuración por defecto debido a problemas de conexión');
+      set({ settings: defaultSettings, error: null });
     }
   },
 
   updateSettings: async (newSettings: Partial<SiteSettings>) => {
-    console.log('⚙️ Actualizando configuración en Firebase...');
-    set({ loading: true, error: null });
+    console.log('⚙️ Actualizando configuración en Supabase...');
+    set({ error: null });
     
     try {
       const currentSettings = get().settings;
       const updatedSettings = { ...currentSettings, ...newSettings };
       
-      // Actualizar en Firebase
-      const docRef = doc(db, 'settings', 'site-config');
-      const firestoreData = convertSettingsToFirestore(updatedSettings);
-      await updateDoc(docRef, firestoreData);
+      const updateData = {
+        site_name: updatedSettings.siteName,
+        logo_url: updatedSettings.logoUrl,
+        logo_color: updatedSettings.logoColor,
+        terms_content: updatedSettings.terms?.content,
+        contact_info: updatedSettings.contactInfo,
+        testimonials: updatedSettings.testimonials,
+        social_links: updatedSettings.socialLinks,
+        updated_at: new Date().toISOString()
+      };
       
-      console.log('✅ Configuración actualizada en Firebase');
+      const { error } = await supabase
+        .from('settings')
+        .update(updateData)
+        .eq('id', 'site-config');
       
-      set({ 
-        settings: updatedSettings,
-        loading: false 
-      });
+      if (error) throw error;
+      
+      console.log('✅ Configuración actualizada en Supabase');
+      
+      set({ settings: updatedSettings });
     } catch (error) {
-      console.error('❌ Error actualizando configuración en Firebase:', error);
-      set({ error: 'Error al actualizar la configuración', loading: false });
+      console.error('❌ Error actualizando configuración en Supabase:', error);
+      set({ error: 'Error al actualizar la configuración' });
       throw error;
     }
   },
 
   uploadLogo: async (file: File) => {
     console.log('📤 Subiendo logo...');
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       // Simular subida de archivo convirtiendo a base64
@@ -177,11 +205,10 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
       });
       
       console.log('✅ Logo subido correctamente');
-      set({ loading: false });
       return dataUrl;
     } catch (error) {
       console.error('❌ Error subiendo logo:', error);
-      set({ error: 'Error al subir el logo', loading: false });
+      set({ error: 'Error al subir el logo' });
       throw error;
     }
   }

@@ -46,25 +46,25 @@ const LandingPage = () => {
     {
       id: 1,
       title: "Regala Arte que Perdura",
-      subtitle: "Giftcards para tatuajes únicos",
-      description: "Dale a alguien especial la oportunidad de expresarse con arte corporal profesional",
-      image: "https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      subtitle: "El regalo perfecto para expresarse",
+      description: "Regala una experiencia única de arte corporal con nuestras tarjetas de regalo",
+      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-purple-600 to-pink-600"
     },
     {
       id: 2,
-      title: "Piercing con Estilo",
-      subtitle: "Giftcards para modificaciones corporales",
-      description: "Regala la experiencia de un piercing profesional en un ambiente seguro y estéril",
-      image: "https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      title: "Experiencia Profesional",
+      subtitle: "Arte corporal de calidad superior",
+      description: "Nuestros artistas especializados crearán la obra perfecta para ti",
+      image: "https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-blue-600 to-purple-600"
     },
     {
       id: 3,
-      title: "Experiencia Completa",
-      subtitle: "Más que un regalo, una experiencia",
-      description: "Nuestras giftcards incluyen consulta personalizada y diseño exclusivo",
-      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      title: "Sistema Digital",
+      subtitle: "Fácil, rápido y seguro",
+      description: "Compra, consulta y usa tus giftcards de forma rápida y segura",
+      image: "https://images.pexels.com/photos/1616403/pexels-photo-1616403.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-pink-600 to-red-600"
     }
   ];
@@ -437,7 +437,7 @@ const LandingPage = () => {
       {/* Footer */}
       <footer className="bg-gray-900 border-t border-gray-800 py-12">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row justify-between items-center">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-4">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
               <img 
                 src={settings.logoUrl} 
@@ -462,6 +462,16 @@ const LandingPage = () => {
                 Admin
               </Link>
             </div>
+          </div>
+          
+          {/* Línea de contacto para desarrollo */}
+          <div className="border-t border-gray-800 pt-4 text-center">
+            <button
+              onClick={handleCallToAction}
+              className="text-sm text-gray-400 hover:text-gray-300 transition-colors"
+            >
+              ¿Quieres un sistema como este? Da clic aquí
+            </button>
           </div>
         </div>
       </footer>

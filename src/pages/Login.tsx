@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Gift } from 'lucide-react';
+import ContactFooter from '../components/layout/ContactFooter';
 import { login } from '../lib/auth';
 import { useAuthStore } from '../stores/authStore';
 import { useActivityStore } from '../stores/activityStore';
@@ -60,8 +61,8 @@ const Login = () => {
         console.log('🎯 Navegando al dashboard...');
         navigate('/dashboard');
       } else {
-        console.log('❌ Credenciales incorrectas');
-        toast.error('Usuario o contraseña incorrectos');
+        console.log('❌ Login fallido');
+        toast.error('Usuario o contraseña incorrectos. Verifique sus credenciales.');
       }
     } catch (error) {
       console.error('💥 Error en login:', error);
@@ -82,12 +83,18 @@ const Login = () => {
         <div className="text-center">
           <Gift className="mx-auto h-16 w-16 text-primary-600 dark:text-primary-400" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-            Daz Giftcard Register
+            Sistema de Giftcards
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Panel de Administración
           </p>
           <div className="mt-2">
+            <Link
+              to="/"
+              className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline text-sm mr-4"
+            >
+              ← Volver al inicio
+            </Link>
             <Link
               to="/buscar"
               className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline text-sm"
@@ -101,8 +108,8 @@ const Login = () => {
           <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow rounded-lg sm:px-10">
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <Input
-                label="Usuario"
-                placeholder="Ingrese su nombre de usuario"
+                label="Usuario o Email"
+                placeholder="Ingrese su usuario o email"
                 {...register('usernameOrEmail', { required: 'Este campo es obligatorio' })}
                 error={errors.usernameOrEmail?.message}
                 autoComplete="username"
@@ -141,7 +148,7 @@ const Login = () => {
                   isLoading={isLoading}
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                  {isLoading ? 'Verificando...' : 'Iniciar Sesión'}
                 </Button>
               </div>
             </form>
@@ -172,6 +179,8 @@ const Login = () => {
           </div>
         </div>
       </div>
+      
+      <ContactFooter />
     </div>
   );
 };

@@ -33,20 +33,23 @@ function App() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        console.log('🚀 Inicializando aplicación...');
+        console.log('🚀 Inicializando aplicación con Supabase...');
         
-        // Inicializar datos de la aplicación
-        await Promise.all([
-          initializeUser(),
-          fetchSettings(),
-          fetchUsers()
+        // Inicializar datos de la aplicación con timeout
+        await Promise.race([
+          Promise.all([
+            initializeUser(),
+            fetchSettings(),
+            fetchUsers()
+          ]),
+          new Promise(resolve => setTimeout(resolve, 5000)) // Timeout de 5 segundos
         ]);
-
+        
         console.log('✅ Aplicación inicializada correctamente');
         
       } catch (error) {
         console.error('❌ Error inicializando aplicación:', error);
-        toast.error('Error al inicializar el sistema');
+        // No mostrar error crítico al usuario, la app puede funcionar sin conexión inicial
       } finally {
         setIsLoading(false);
       }
@@ -66,7 +69,7 @@ function App() {
         <div className="text-center">
           <div className="animate-spin w-16 h-16 border-b-2 border-primary-600 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Inicializando aplicación...
+            Inicializando sistema con Supabase...
           </p>
         </div>
       </div>
@@ -90,7 +93,6 @@ function App() {
             <Route path="/giftcards" element={<GiftcardsList />} />
             <Route path="/giftcards/crear" element={user?.role === 'superadmin' ? <CreateGiftcard /> : <Navigate to="/dashboard" replace />} />
             <Route path="/giftcards/:id" element={<GiftcardDetails />} />
-            <Route path="/usuarios" element={user?.role === 'superadmin' ? <UserManagement /> : <Navigate to="/dashboard" replace />} />
             <Route path="/mensajes" element={user?.role === 'superadmin' ? <ContactMessages /> : <Navigate to="/dashboard" replace />} />
             <Route path="/actividad" element={user?.role === 'superadmin' ? <GlobalActivityPage /> : <Navigate to="/dashboard" replace />} />
             <Route path="/configuracion-sitio" element={user?.role === 'superadmin' ? <SiteConfiguration /> : <Navigate to="/dashboard" replace />} />
