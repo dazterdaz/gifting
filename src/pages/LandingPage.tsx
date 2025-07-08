@@ -48,7 +48,7 @@ const LandingPage = () => {
       title: "El Regalo Perfecto",
       subtitle: "Giftcards Daz Tattoo",
       description: "Regala una experiencia única de arte corporal con nuestras tarjetas de regalo",
-      image: "https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      image: "https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-purple-600 to-pink-600"
     },
     {
@@ -56,7 +56,7 @@ const LandingPage = () => {
       title: "Arte y Profesionalismo",
       subtitle: "Tatuajes y Piercings de Calidad",
       description: "Nuestros artistas especializados crearán la obra perfecta para ti",
-      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      image: "https://images.pexels.com/photos/1616403/pexels-photo-1616403.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-blue-600 to-purple-600"
     },
     {
@@ -64,7 +64,7 @@ const LandingPage = () => {
       title: "Fácil y Seguro",
       subtitle: "Sistema de Giftcards Digital",
       description: "Compra, consulta y usa tus giftcards de forma rápida y segura",
-      image: "https://images.pexels.com/photos/5699456/pexels-photo-5699456.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-pink-600 to-red-600"
     }
   ];
