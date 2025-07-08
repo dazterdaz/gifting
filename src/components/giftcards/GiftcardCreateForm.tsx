@@ -195,6 +195,17 @@ const GiftcardCreateForm: React.FC = () => {
                 error={errors.duration?.message}
               />
             </div>
+            
+            <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                📅 Información de Vencimiento
+              </h4>
+              <div className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                <p><strong>• Fecha de vencimiento:</strong> Se establecerá automáticamente cuando la tarjeta sea marcada como "Entregada"</p>
+                <p><strong>• Duración:</strong> La tarjeta será válida por {watch('duration') || 90} días desde la fecha de entrega</p>
+                <p><strong>• Consulta pública:</strong> Los clientes podrán ver cuántos días les quedan al consultar su tarjeta</p>
+              </div>
+            </div>
           </div>
         </CardContent>
         <CardFooter className="flex justify-between">
