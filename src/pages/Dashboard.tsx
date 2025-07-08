@@ -120,10 +120,10 @@ const Dashboard = () => {
           <div className="flex space-x-3">
             <Button
               variant="outline"
-              leftIcon={<Settings className="h-5 w-5" />}
-              onClick={() => navigate('/usuarios')}
+              leftIcon={<Mail className="h-5 w-5" />}
+              onClick={() => navigate('/mensajes')}
             >
-              {t('dashboard.manageUsers')}
+              Mensajes
             </Button>
             <Button
               leftIcon={<Plus className="h-5 w-5" />}
@@ -343,17 +343,6 @@ const Dashboard = () => {
                 >
                   {t('giftcards.title')}
                 </Button>
-                
-                {user?.role === 'superadmin' && (
-                  <Button
-                    leftIcon={<Users className="h-5 w-5" />}
-                    variant="outline"
-                    className="w-full justify-start"
-                    onClick={() => navigate('/usuarios')}
-                  >
-                    {t('dashboard.manageUsers')}
-                  </Button>
-                )}
               </div>
             </CardContent>
           </Card>

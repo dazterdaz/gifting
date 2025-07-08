@@ -141,15 +141,35 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      // Obtener números existentes para generar uno único
-      const { data: existingGiftcards } = await supabase
-        .from('giftcards')
-        .select('number');
+      let giftcardNumber: string;
       
-      const existingNumbers = existingGiftcards?.map(g => g.number) || [];
+      if (giftcardData.customNumber) {
+        // Verificar que el número personalizado no exista
+        const { data: existingCard } = await supabase
+          .from('giftcards')
+          .select('number')
+          .eq('number', giftcardData.customNumber)
+          .single();
+        
+        if (existingCard) {
+          throw new Error(`El número ${giftcardData.customNumber} ya existe. Por favor use otro número.`);
+        }
+        
+        giftcardNumber = giftcardData.customNumber;
+        console.log('🔢 Usando número personalizado:', giftcardNumber);
+      } else {
+        // Generar número automáticamente
+        const { data: existingGiftcards } = await supabase
+          .from('giftcards')
+          .select('number');
+        
+        const existingNumbers = existingGiftcards?.map(g => g.number) || [];
+        giftcardNumber = generateGiftcardNumber(existingNumbers);
+        console.log('🎲 Número generado automáticamente:', giftcardNumber);
+      }
       
       const newGiftcard = {
-        number: generateGiftcardNumber(existingNumbers),
+        number: giftcardNumber,
         buyer_name: giftcardData.buyer.name,
         buyer_email: giftcardData.buyer.email,
         buyer_phone: giftcardData.buyer.phone,

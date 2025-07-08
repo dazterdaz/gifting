@@ -181,34 +181,66 @@ export function exportToPDF(giftcards: Giftcard[], locale = 'es'): void {
 export function exportToCSV(giftcards: Giftcard[], locale = 'es'): void {
   // Define headers
   const headers = locale === 'es'
-    ? ['Número', 'Estado', 'Comprador', 'Destinatario', 'Monto', 'Fecha creación', 'Fecha vencimiento']
-    : ['Number', 'Status', 'Buyer', 'Recipient', 'Amount', 'Creation Date', 'Expiration Date'];
+    ? [
+        'Número', 'Estado', 'Monto',
+        'Comprador - Nombre', 'Comprador - Email', 'Comprador - Teléfono',
+        'Destinatario - Nombre', 'Destinatario - Email', 'Destinatario - Teléfono',
+        'Fecha Creación', 'Fecha Entrega', 'Fecha Vencimiento', 'Fecha Cobro', 'Fecha Anulación',
+        'Artista', 'Notas'
+      ]
+    : [
+        'Number', 'Status', 'Amount',
+        'Buyer - Name', 'Buyer - Email', 'Buyer - Phone',
+        'Recipient - Name', 'Recipient - Email', 'Recipient - Phone',
+        'Creation Date', 'Delivery Date', 'Expiration Date', 'Redeemed Date', 'Cancelled Date',
+        'Artist', 'Notes'
+      ];
   
   // Prepare data
   const data = giftcards.map(g => [
     g.number,
     translateStatus(g.status, locale),
-    g.buyer.name,
-    g.recipient.name,
     g.amount,
+    // Datos del comprador
+    g.buyer.name,
+    g.buyer.email,
+    g.buyer.phone,
+    // Datos del destinatario
+    g.recipient.name,
+    g.recipient.email,
+    g.recipient.phone,
+    // Fechas
     formatDate(g.createdAt, 'dd/MM/yyyy', locale),
-    g.expiresAt ? formatDate(g.expiresAt, 'dd/MM/yyyy', locale) : ''
+    g.deliveredAt ? formatDate(g.deliveredAt, 'dd/MM/yyyy', locale) : '',
+    g.expiresAt ? formatDate(g.expiresAt, 'dd/MM/yyyy', locale) : '',
+    g.redeemedAt ? formatDate(g.redeemedAt, 'dd/MM/yyyy', locale) : '',
+    g.cancelledAt ? formatDate(g.cancelledAt, 'dd/MM/yyyy', locale) : '',
+    // Información adicional
+    g.artist || '',
+    g.notes || ''
   ]);
   
   // Create CSV content
   const csvContent = [
     headers.join(','),
-    ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...data.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
   ].join('\n');
   
   // Create download link
-  const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+  const BOM = '\uFEFF'; // Byte Order Mark para UTF-8
+  const csvWithBOM = BOM + csvContent;
+  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
   const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', locale === 'es' ? 'giftcards.csv' : 'giftcards.csv');
+  link.href = url;
+  link.download = locale === 'es' 
+    ? `giftcards-completo-${new Date().toISOString().split('T')[0]}.csv`
+    : `giftcards-complete-${new Date().toISOString().split('T')[0]}.csv`;
   document.body.appendChild(link);
   
   // Trigger download and remove link
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

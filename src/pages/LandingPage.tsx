@@ -45,26 +45,26 @@ const LandingPage = () => {
   const slides = [
     {
       id: 1,
-      title: "Regala Arte que Perdura",
-      subtitle: "Giftcards para tatuajes únicos",
-      description: "Dale a alguien especial la oportunidad de expresarse con arte corporal profesional",
-      image: "https://images.pexels.com/photos/1040881/pexels-photo-1040881.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      title: "El Regalo Perfecto",
+      subtitle: "Giftcards Daz Tattoo",
+      description: "Regala una experiencia única de arte corporal con nuestras tarjetas de regalo",
+      image: "https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-purple-600 to-pink-600"
     },
     {
       id: 2,
-      title: "Piercing con Estilo",
-      subtitle: "Giftcards para modificaciones corporales",
-      description: "Regala la experiencia de un piercing profesional en un ambiente seguro y estéril",
-      image: "https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      title: "Arte y Profesionalismo",
+      subtitle: "Tatuajes y Piercings de Calidad",
+      description: "Nuestros artistas especializados crearán la obra perfecta para ti",
+      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-blue-600 to-purple-600"
     },
     {
       id: 3,
-      title: "Experiencia Completa",
-      subtitle: "Más que un regalo, una experiencia",
-      description: "Nuestras giftcards incluyen consulta personalizada y diseño exclusivo",
-      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      title: "Fácil y Seguro",
+      subtitle: "Sistema de Giftcards Digital",
+      description: "Compra, consulta y usa tus giftcards de forma rápida y segura",
+      image: "https://images.pexels.com/photos/5699456/pexels-photo-5699456.jpeg?auto=compress&cs=tinysrgb&w=1200",
       color: "from-pink-600 to-red-600"
     }
   ];
