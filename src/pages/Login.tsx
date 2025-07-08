@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { Eye, EyeOff, Gift } from 'lucide-react';
+import ContactFooter from '../components/layout/ContactFooter';
 import { login } from '../lib/auth';
 import { useAuthStore } from '../stores/authStore';
 import { useActivityStore } from '../stores/activityStore';
@@ -178,6 +179,8 @@ const Login = () => {
           </div>
         </div>
       </div>
+      
+      <ContactFooter />
     </div>
   );
 };

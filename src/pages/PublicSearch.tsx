@@ -4,6 +4,7 @@ import { Search, ExternalLink, Gift, CheckCircle, FileText, Home } from 'lucide-
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import ContactFooter from '../components/layout/ContactFooter';
 import StatusBadge from '../components/ui/StatusBadge';
 import { useGiftcardStore } from '../stores/giftcardStore';
 import { useSettingsStore } from '../stores/settingsStore';
@@ -324,6 +325,8 @@ const PublicSearch = () => {
           </p>
         </div>
       </div>
+      
+      <ContactFooter />
     </div>
   );
 };
