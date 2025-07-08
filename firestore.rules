@@ -1,59 +1,9 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas temporales para desarrollo - CAMBIAR EN PRODUCCIÓN
+    // REGLAS COMPLETAMENTE ABIERTAS PARA DESARROLLO
+    // IMPORTANTE: Cambiar estas reglas en producción
     
-    // Función para verificar si el usuario está autenticado
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-    
-    // Función para verificar si es el usuario administrador
-    function isAdminUser() {
-      return isAuthenticated() && request.auth.token.email == 'demian.83@hotmail.es';
-    }
-
-    // Colección de usuarios
-    match /users/{userId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Colección de giftcards
-    match /giftcards/{giftcardId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Colección de actividades
-    match /activities/{activityId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Colección de mensajes de contacto
-    match /contactMessages/{messageId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Configuración del sitio
-    match /settings/{settingId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Términos y condiciones
-    match /terms/{termId} {
-      allow read, write: if true; // Acceso completo temporal
-    }
-
-    // Documentos de inicialización
-    match /{collection}/_init {
-      allow read, write: if true;
-    }
-
-    // Documento de prueba de conexión
-    match /test/connection {
-      allow read, write: if true;
-    }
-    
-    // Regla catch-all para desarrollo
     match /{document=**} {
       allow read, write: if true;
     }

@@ -141,14 +141,6 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      // Asegurar autenticación en Firebase antes de crear
-      const authStore = useAuthStore.getState();
-      const isFirebaseAuthenticated = await authStore.ensureFirebaseAuth();
-      
-      if (!isFirebaseAuthenticated) {
-        console.warn('⚠️ No se pudo autenticar en Firebase, continuando con reglas abiertas...');
-      }
-      
       let existingNumbers: string[] = [];
       
       try {
@@ -209,29 +201,12 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       let errorMessage = 'Error al crear la tarjeta de regalo';
       
-      if (error.code === 'permission-denied' || error.code === 'unauthenticated') {
-        console.log('🔐 Error de permisos, intentando reautenticar...');
-        
-        // Intentar reautenticar y reintentar
-        try {
-          const authStore = useAuthStore.getState();
-          const reauth = await authStore.ensureFirebaseAuth();
-          
-          if (reauth) {
-            console.log('🔄 Reautenticado, reintentando creación...');
-            // Reintentar la operación una vez
-            return await get().createGiftcard(giftcardData);
-          } else {
-            errorMessage = 'Error de autenticación. Por favor, cierre sesión e inicie nuevamente.';
-          }
-        } catch (reauthError) {
-          console.error('❌ Error en reautenticación:', reauthError);
-          errorMessage = 'Error de permisos. Verifique su sesión.';
-        }
-      } else if (error.code === 'unavailable') {
+      if (error.code === 'unavailable') {
         errorMessage = 'Servicio no disponible. Intente nuevamente.';
       } else if (error.code === 'network-request-failed') {
         errorMessage = 'Error de conexión. Verifique su internet.';
+      } else if (error.code === 'permission-denied') {
+        errorMessage = 'Error de configuración. Contacte al administrador.';
       } else if (error.message) {
         errorMessage = error.message;
       }
@@ -243,7 +218,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
   
   updateGiftcardStatus: async (id: string, status: GiftcardStatus, notes?: string, artist?: string) => {
     console.log('🔄 Actualizando estado de giftcard en Firebase:', id, 'a', status);
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       const now = new Date().toISOString();
@@ -282,19 +257,18 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
           selectedGiftcard: state.selectedGiftcard?.id === id 
             ? { ...state.selectedGiftcard, ...updateData } 
             : state.selectedGiftcard,
-          loading: false
         };
       });
     } catch (error) {
       console.error('❌ Error actualizando estado en Firebase:', error);
-      set({ error: 'Error al actualizar el estado de la tarjeta', loading: false });
+      set({ error: 'Error al actualizar el estado de la tarjeta' });
       throw error;
     }
   },
   
   extendExpiration: async (id: string, days: number) => {
     console.log('📅 Extendiendo vencimiento en Firebase:', id, days, 'días');
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       const { selectedGiftcard } = get();
@@ -326,19 +300,18 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
           selectedGiftcard: state.selectedGiftcard?.id === id 
             ? { ...state.selectedGiftcard, expiresAt: newExpiresAt } 
             : state.selectedGiftcard,
-          loading: false
         };
       });
     } catch (error) {
       console.error('❌ Error extendiendo vencimiento en Firebase:', error);
-      set({ error: 'Error al extender la fecha de vencimiento', loading: false });
+      set({ error: 'Error al extender la fecha de vencimiento' });
       throw error;
     }
   },
   
   deleteGiftcard: async (id: string) => {
     console.log('🗑️ Eliminando giftcard de Firebase:', id);
-    set({ loading: true, error: null });
+    set({ error: null });
     
     try {
       // Eliminar de Firebase
@@ -352,11 +325,10 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         giftcards: state.giftcards.filter(g => g.id !== id),
         filteredGiftcards: state.filteredGiftcards.filter(g => g.id !== id),
         selectedGiftcard: state.selectedGiftcard?.id === id ? null : state.selectedGiftcard,
-        loading: false
       }));
     } catch (error) {
       console.error('❌ Error eliminando giftcard de Firebase:', error);
-      set({ error: 'Error al eliminar la tarjeta de regalo', loading: false });
+      set({ error: 'Error al eliminar la tarjeta de regalo' });
       throw error;
     }
   },

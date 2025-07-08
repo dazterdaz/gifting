@@ -55,22 +55,9 @@ const GiftcardCreateForm: React.FC = () => {
     }
     
     console.log('📝 Iniciando creación de tarjeta de regalo...');
-    console.log('📋 Datos del formulario:', {
-      buyerName: data.buyerName,
-      amount: data.amount,
-      duration: data.duration
-    });
     
     setIsSubmitting(true);
     try {
-      // Asegurar autenticación en Firebase antes de proceder
-      console.log('🔐 Verificando autenticación en Firebase...');
-      const isAuthenticated = await ensureFirebaseAuth();
-      
-      if (!isAuthenticated) {
-        console.warn('⚠️ No se pudo autenticar en Firebase, continuando...');
-      }
-      
       const giftcardData = {
         buyer: {
           name: data.buyerName,
@@ -86,7 +73,6 @@ const GiftcardCreateForm: React.FC = () => {
         duration: data.duration ? parseInt(data.duration.toString()) : 90
       };
       
-      console.log('🚀 Enviando datos a createGiftcard...');
       const newGiftcard = await createGiftcard(giftcardData);
       
       console.log('✅ Tarjeta de regalo creada exitosamente:', newGiftcard.number);
@@ -115,12 +101,7 @@ const GiftcardCreateForm: React.FC = () => {
     } catch (error) {
       console.error('❌ Error en el formulario:', error);
       
-      let errorMessage = 'Error al crear la tarjeta de regalo';
-      if (error.message && error.message.includes('permission')) {
-        errorMessage = 'Error de permisos. Intente cerrar sesión y volver a iniciar.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
+      const errorMessage = error.message || 'Error al crear la tarjeta de regalo';
       
       toast.error(errorMessage, {
         duration: 3000,

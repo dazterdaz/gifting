@@ -7,87 +7,6 @@ import {
 } from './firebase';
 import { db } from './firebase';
 
-import { 
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  onAuthStateChanged
-} from './firebase';
-import { auth } from './firebase';
-
-// Función para crear usuario de autenticación si no existe (ejecutar en background)
-export const ensureAuthUser = async () => {
-  try {
-    console.log('👤 Configurando autenticación en background...');
-    
-    const email = 'demian.83@hotmail.es';
-    const password = '@Llamasami1';
-    
-    // Verificar si ya hay un usuario autenticado
-    const currentUser = auth.currentUser;
-    if (currentUser && currentUser.email === email) {
-      console.log('✅ Usuario ya autenticado en Firebase');
-      return currentUser;
-    }
-    
-    try {
-      // Intentar crear el usuario de autenticación
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('✅ Usuario de autenticación creado');
-      
-      // Crear documento de usuario en Firestore
-      const userRef = doc(db, 'users', 'admin-demian');
-      await setDoc(userRef, {
-        uid: userCredential.user.uid,
-        username: 'demian',
-        email: email,
-        role: 'superadmin',
-        createdAt: Timestamp.now(),
-        lastLogin: Timestamp.now(),
-        isActive: true
-      });
-      
-      console.log('✅ Documento de usuario creado en Firestore');
-      
-      // No cerrar sesión, mantener autenticado
-      
-      return userCredential.user;
-      
-    } catch (createError) {
-      if (createError.code === 'auth/email-already-in-use') {
-        console.log('ℹ️ Usuario de autenticación ya existe');
-        
-        // Intentar iniciar sesión con el usuario existente
-        try {
-          const signInResult = await signInWithEmailAndPassword(auth, email, password);
-          console.log('✅ Sesión iniciada con usuario existente');
-          return signInResult.user;
-        } catch (signInError) {
-          console.warn('⚠️ Error iniciando sesión:', signInError.code);
-          return null;
-        }
-      } else {
-        console.warn('⚠️ Error configurando autenticación:', createError.code);
-        return null;
-      }
-    }
-    
-  } catch (error) {
-    console.warn('⚠️ Error en configuración de autenticación:', error.code || error.message);
-    return null;
-  }
-};
-
-// Función para configurar listener de autenticación
-export const setupAuthListener = () => {
-  return onAuthStateChanged(auth, (user) => {
-    if (user) {
-      console.log('🔐 Usuario autenticado en Firebase:', user.email);
-    } else {
-      console.log('👤 No hay usuario autenticado en Firebase');
-    }
-  });
-};
-
 // Función para verificar la conectividad con Firebase (no crítica)
 export const checkFirebaseConnection = async () => {
   try {
@@ -206,26 +125,20 @@ export const initializeFirebaseCollections = async () => {
   try {
     console.log('🔄 Inicializando Firebase en background...');
     
-    // Configurar listener de autenticación
-    setupAuthListener();
-    
     // Ejecutar en background sin bloquear la UI
     setTimeout(async () => {
       try {
         // 1. Verificar conexión
         await checkFirebaseConnection();
         
-        // 2. Crear usuario de autenticación
-        await ensureAuthUser();
-        
-        // 3. Inicializar configuración básica
+        // 2. Inicializar configuración básica
         await initializeBasicSettings();
         
         console.log('🎉 Firebase inicializado correctamente en background');
       } catch (error) {
         console.warn('⚠️ Error en inicialización de background:', error);
       }
-    }, 1000); // Ejecutar después de 1 segundo
+    }, 2000); // Ejecutar después de 2 segundos
     
     return true;
     
@@ -247,7 +160,5 @@ export const COLLECTIONS = {
 export default {
   initializeFirebaseCollections,
   checkFirebaseConnection,
-  ensureAuthUser,
-  setupAuthListener,
   COLLECTIONS
 };
