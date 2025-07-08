@@ -1,5 +1,15 @@
 import { create } from 'zustand';
-import { dbService } from '../lib/database';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  addDoc, 
+  updateDoc, 
+  query, 
+  orderBy, 
+  Timestamp 
+} from '../lib/firebase';
+import { db } from '../lib/firebase';
 
 export interface ContactMessage {
   id: string;
@@ -11,6 +21,28 @@ export interface ContactMessage {
   createdAt: string;
   archived: boolean;
 }
+
+// Convertir documento de Firestore a ContactMessage
+const convertFirestoreToMessage = (doc: any): ContactMessage => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    ...data,
+    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
+  };
+};
+
+// Convertir ContactMessage a formato Firestore
+const convertMessageToFirestore = (message: Partial<ContactMessage>) => {
+  const data = { ...message };
+  
+  if (data.createdAt) {
+    data.createdAt = Timestamp.fromDate(new Date(data.createdAt));
+  }
+  
+  delete data.id;
+  return data;
+};
 
 interface ContactState {
   messages: ContactMessage[];
@@ -25,74 +57,73 @@ interface ContactState {
   getArchivedMessages: () => ContactMessage[];
 }
 
-// Convertir datos de base de datos a formato de la aplicación
-const convertDbToMessage = (dbData: any): ContactMessage => ({
-  id: dbData.id,
-  name: dbData.name,
-  whatsapp: dbData.whatsapp,
-  email: dbData.email,
-  message: dbData.message,
-  status: dbData.status,
-  createdAt: dbData.created_at,
-  archived: dbData.archived
-});
-
 export const useContactStore = create<ContactState>()((set, get) => ({
   messages: [],
   loading: false,
   error: null,
   
   fetchMessages: async () => {
-    console.log('📨 Cargando mensajes de contacto desde base de datos...');
+    console.log('📨 Cargando mensajes de contacto desde Firebase...');
     set({ loading: true, error: null });
     
     try {
-      const dbMessages = await dbService.contactMessages.getAll();
-      const messages = dbMessages.map(convertDbToMessage);
+      const messagesRef = collection(db, 'contactMessages');
+      const q = query(messagesRef, orderBy('createdAt', 'desc'));
+      const querySnapshot = await getDocs(q);
       
-      console.log('✅ Mensajes cargados desde base de datos:', messages.length);
+      const messages = querySnapshot.docs.map(convertFirestoreToMessage);
+      
+      console.log('✅ Mensajes cargados desde Firebase:', messages.length);
       set({ messages, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando mensajes desde base de datos:', error);
+      console.error('❌ Error cargando mensajes desde Firebase:', error);
       set({ error: 'Error al cargar los mensajes', loading: false });
     }
   },
   
   sendContactMessage: async (messageData) => {
-    console.log('📤 Enviando mensaje de contacto a base de datos...');
+    console.log('📤 Enviando mensaje de contacto a Firebase...');
     set({ loading: true, error: null });
     
     try {
-      await dbService.contactMessages.create(messageData);
-      
-      console.log('✅ Mensaje enviado a base de datos correctamente');
-      
-      // Crear objeto completo para el estado local
-      const newMessage: ContactMessage = {
+      const newMessage: Omit<ContactMessage, 'id'> = {
         ...messageData,
-        id: Math.random().toString(36).substring(2, 15),
         status: 'nuevo',
         createdAt: new Date().toISOString(),
         archived: false
       };
       
+      // Guardar en Firebase
+      const messagesRef = collection(db, 'contactMessages');
+      const firestoreData = convertMessageToFirestore(newMessage);
+      const docRef = await addDoc(messagesRef, firestoreData);
+      
+      const messageWithId: ContactMessage = {
+        ...newMessage,
+        id: docRef.id
+      };
+      
+      console.log('✅ Mensaje enviado a Firebase correctamente');
+      
       set(state => ({
-        messages: [newMessage, ...state.messages],
+        messages: [messageWithId, ...state.messages],
         loading: false
       }));
     } catch (error) {
-      console.error('❌ Error enviando mensaje a base de datos:', error);
+      console.error('❌ Error enviando mensaje a Firebase:', error);
       set({ error: 'Error al enviar el mensaje', loading: false });
       throw error;
     }
   },
   
   updateMessageStatus: async (id, status) => {
-    console.log('🔄 Actualizando estado del mensaje en base de datos:', id, 'a', status);
+    console.log('🔄 Actualizando estado del mensaje en Firebase:', id, 'a', status);
     set({ loading: true, error: null });
     
     try {
-      await dbService.contactMessages.updateStatus(id, status);
+      // Actualizar en Firebase
+      const docRef = doc(db, 'contactMessages', id);
+      await updateDoc(docRef, { status });
       
       // Actualizar estado local
       set(state => ({
@@ -102,20 +133,22 @@ export const useContactStore = create<ContactState>()((set, get) => ({
         loading: false
       }));
       
-      console.log('✅ Estado actualizado en base de datos correctamente');
+      console.log('✅ Estado actualizado en Firebase correctamente');
     } catch (error) {
-      console.error('❌ Error actualizando estado en base de datos:', error);
+      console.error('❌ Error actualizando estado en Firebase:', error);
       set({ error: 'Error al actualizar el estado', loading: false });
       throw error;
     }
   },
   
   archiveMessage: async (id) => {
-    console.log('📁 Archivando mensaje en base de datos:', id);
+    console.log('📁 Archivando mensaje en Firebase:', id);
     set({ loading: true, error: null });
     
     try {
-      await dbService.contactMessages.archive(id);
+      // Actualizar en Firebase
+      const docRef = doc(db, 'contactMessages', id);
+      await updateDoc(docRef, { archived: true });
       
       // Actualizar estado local
       set(state => ({
@@ -125,9 +158,9 @@ export const useContactStore = create<ContactState>()((set, get) => ({
         loading: false
       }));
       
-      console.log('✅ Mensaje archivado en base de datos correctamente');
+      console.log('✅ Mensaje archivado en Firebase correctamente');
     } catch (error) {
-      console.error('❌ Error archivando mensaje en base de datos:', error);
+      console.error('❌ Error archivando mensaje en Firebase:', error);
       set({ error: 'Error al archivar el mensaje', loading: false });
       throw error;
     }

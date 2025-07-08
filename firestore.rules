@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para usuarios autenticados
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Reglas para superadmin
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+    }
+    
+    // Reglas para admin o superadmin
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+    }
+
+    // Colección de usuarios - solo superadmin puede modificar
+    match /users/{userId} {
+      // Permitir creación sin autenticación del usuario administrador por defecto
+      allow create: if userId == 'admin-demian' && request.auth == null;
+      
+      // Permitir lectura sin autenticación del usuario administrador por defecto (para verificación inicial)
+      allow read: if userId == 'admin-demian' && request.auth == null;
+
+      // Permitir lectura autenticada para todos los usuarios
+      allow read: if isAuthenticated();
+      
+      // Permitir escritura (actualización/eliminación) solo para superadmin
+      allow write: if isSuperAdmin();
+    }
+
+    // Colección de giftcards - admin y superadmin pueden leer/escribir
+    match /giftcards/{giftcardId} {
+      allow read, write: if isAdmin();
+      // Permitir lectura pública para consultas específicas por número
+      allow read: if resource.data.number == request.query.number;
+    }
+
+    // Colección de actividades - admin y superadmin pueden leer/escribir
+    match /activities/{activityId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Colección de mensajes de contacto - admin y superadmin pueden leer/escribir
+    match /contactMessages/{messageId} {
+      allow read, write: if isAdmin();
+      // Permitir escritura pública para envío de mensajes de contacto
+      allow create: if true;
+    }
+
+    // Configuración del sitio - solo superadmin puede modificar
+    match /settings/{settingId} {
+      allow read: if true; // Lectura pública para la página principal
+      allow write: if isSuperAdmin();
+    }
+
+    // Configuración específica del sitio - lectura pública
+    match /settings/site-config {
+      allow read: if true;
+      allow write: if isSuperAdmin();
+    }
+
+    // Términos y condiciones - lectura pública, escritura solo superadmin
+    match /terms/{termId} {
+      allow read: if true; // Lectura pública para la consulta de giftcards
+      allow write: if isSuperAdmin();
+    }
+
+    // Documento de inicialización - solo lectura
+    match /{collection}/_init {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Documento de prueba de conexión
+    match /test/connection {
+      allow read, write: if true;
+    }
+  }
+}

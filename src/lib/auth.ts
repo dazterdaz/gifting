@@ -1,52 +1,44 @@
 import { useAuthStore } from '../stores/authStore';
-import { dbService } from './database';
 import { User, LoginCredentials } from '../types';
 
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
   console.log('🔐 Iniciando proceso de login...');
   
-  try {
-    // Buscar usuario en la base de datos
-    const dbUser = await dbService.users.getByUsername(usernameOrEmail);
-    
-    if (!dbUser) {
-      console.log('❌ Usuario no encontrado');
-      return null;
-    }
-    
-    // Verificar contraseña
-    const isValidPassword = await dbService.users.verifyPassword(password, dbUser.password_hash);
-    
-    if (!isValidPassword) {
-      console.log('❌ Contraseña incorrecta');
-      return null;
-    }
-    
-    console.log('✅ Credenciales correctas');
-    
-    // Actualizar último login
-    await dbService.users.update(dbUser.id, { last_login: new Date().toISOString() });
-    
-    // Generar token (simulado)
-    const token = `token-${Math.random().toString(36).substring(2, 10)}`;
-    
-    // Crear objeto usuario sin contraseña
-    const user: User = {
-      id: dbUser.id,
-      username: dbUser.username,
-      email: dbUser.email,
-      role: dbUser.role,
-      lastLogin: new Date().toISOString()
-    };
-    
-    console.log('🎫 Token generado:', token);
-    console.log('👤 Usuario autenticado:', user);
-    
-    return { user, token };
-  } catch (error) {
-    console.error('💥 Error en login:', error);
+  // Simulating API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Usuario hardcodeado para demo
+  const demoUser = {
+    id: '1',
+    username: 'demian',
+    email: 'demian.83@hotmail.es',
+    password: '@Llamasami1',
+    role: 'superadmin' as const,
+    lastLogin: new Date().toISOString()
+  };
+  
+  console.log('🔍 Verificando credenciales...');
+  console.log('Usuario ingresado:', usernameOrEmail);
+  console.log('Usuario esperado:', demoUser.username);
+  
+  // Verificar credenciales (solo username, no email)
+  if (usernameOrEmail.toLowerCase() !== demoUser.username.toLowerCase() || password !== demoUser.password) {
+    console.log('❌ Credenciales incorrectas');
     return null;
   }
+  
+  console.log('✅ Credenciales correctas');
+  
+  // Generate mock token
+  const token = `mock-token-${Math.random().toString(36).substring(2, 10)}`;
+  
+  // Strip password from returned user object
+  const { password: _, ...safeUser } = demoUser;
+  
+  console.log('🎫 Token generado:', token);
+  console.log('👤 Usuario autenticado:', safeUser);
+  
+  return { user: safeUser, token };
 };
 
 export const logout = async (): Promise<void> => {
@@ -56,7 +48,6 @@ export const logout = async (): Promise<void> => {
     console.log('👋 Cerrando sesión para:', user.username);
   }
   
-  // Limpiar store local
   useAuthStore.getState().logout();
 };
 
@@ -72,7 +63,7 @@ export const initializeUser = async (): Promise<void> => {
 };
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
-  // Implementar cuando sea necesario
+  // En una aplicación real, esto sería una llamada a la API para actualizar la contraseña
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
 };
