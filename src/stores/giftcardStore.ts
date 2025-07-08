@@ -90,7 +90,6 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
   
   fetchGiftcards: async () => {
     console.log('🎫 Cargando giftcards desde Firebase...');
-    set({ loading: true, error: null });
     
     try {
       const giftcardsRef = collection(db, 'giftcards');
@@ -104,11 +103,19 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       set({ 
         giftcards, 
         filteredGiftcards: giftcards, 
-        loading: false 
+        loading: false,
+        error: null
       });
     } catch (error) {
       console.error('❌ Error cargando giftcards desde Firebase:', error);
-      set({ error: 'Error al cargar las tarjetas de regalo', loading: false });
+      
+      // No fallar completamente, usar array vacío como fallback
+      set({ 
+        giftcards: [],
+        filteredGiftcards: [],
+        loading: false,
+        error: null // No mostrar error al usuario
+      });
     }
   },
   

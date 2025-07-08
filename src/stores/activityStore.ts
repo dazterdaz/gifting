@@ -85,7 +85,6 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
   
   fetchRecentActivities: async (limitCount = 5) => {
     console.log('📊 Cargando actividades recientes desde Firebase...');
-    set({ loading: true, error: null });
     
     try {
       const activitiesRef = collection(db, 'activities');
@@ -102,11 +101,18 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
       
       set({ 
         recentActivities, 
-        loading: false 
+        loading: false,
+        error: null
       });
     } catch (error) {
       console.error('❌ Error cargando actividades recientes desde Firebase:', error);
-      set({ error: 'Error al cargar actividades recientes', loading: false });
+      
+      // No fallar completamente, usar array vacío como fallback
+      set({ 
+        recentActivities: [],
+        loading: false,
+        error: null // No mostrar error al usuario
+      });
     }
   },
   
