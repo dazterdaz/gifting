@@ -10,6 +10,7 @@ import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
+import { initializeFirebaseCollections } from '../lib/firebaseInit';
 
 interface LoginFormValues {
   usernameOrEmail: string;
@@ -29,6 +30,10 @@ const Login = () => {
   
   const onSubmit = async (data: LoginFormValues) => {
     console.log('🚀 Iniciando submit del formulario...');
+    
+    // Inicializar Firebase en background si no se ha hecho
+    initializeFirebaseCollections();
+    
     setIsLoading(true);
     
     try {
@@ -101,11 +106,14 @@ const Login = () => {
           <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow rounded-lg sm:px-10">
             <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
               <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
-                🔐 Credenciales de Acceso
+                🔐 Credenciales de Acceso (Demo)
               </h3>
               <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
                 <p><strong>Usuario:</strong> demian</p>
                 <p><strong>Contraseña:</strong> @Llamasami1</p>
+                <p className="text-blue-600 dark:text-blue-400 mt-2">
+                  <em>Nota: El sistema se inicializa automáticamente al hacer login</em>
+                </p>
               </div>
             </div>
             
