@@ -1,6 +1,41 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  getDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  setDoc, 
+  query, 
+  orderBy, 
+  Timestamp 
+} from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { User } from '../types';
+
+// Convertir documento de Firestore a User
+const convertFirestoreToUser = (doc: any): User => {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    ...data,
+    lastLogin: data.lastLogin?.toDate?.()?.toISOString() || data.lastLogin,
+  };
+};
+
+// Convertir User a formato Firestore
+const convertUserToFirestore = (user: Partial<User>) => {
+  const data = { ...user };
+  
+  if (data.lastLogin) {
+    data.lastLogin = Timestamp.fromDate(new Date(data.lastLogin));
+  }
+  
+  delete data.id;
+  return data;
+};
 
 interface UserState {
   users: User[];
@@ -16,135 +51,200 @@ interface UserState {
   initializeDefaultUser: () => Promise<void>;
 }
 
-export const useUserStore = create<UserState>()(
-  persist(
-    (set, get) => ({
-      users: [
-        {
-          id: '1',
-          username: 'demian',
-          email: 'demian.83@hotmail.es',
-          role: 'superadmin',
-          lastLogin: new Date().toISOString()
-        }
-      ],
-      selectedUser: null,
-      loading: false,
-      error: null,
+export const useUserStore = create<UserState>()((set, get) => ({
+  users: [],
+  selectedUser: null,
+  loading: false,
+  error: null,
+  
+  fetchUsers: async () => {
+    console.log('👥 Cargando usuarios desde Firebase...');
+    set({ loading: true, error: null });
+    
+    try {
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, orderBy('username', 'asc'));
+      const querySnapshot = await getDocs(q);
       
-      fetchUsers: async () => {
-        set({ loading: true, error: null });
-        try {
-          // Simular carga de usuarios
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          const { users } = get();
-          
-          // Si no hay usuarios, crear el usuario por defecto
-          if (users.length === 0) {
-            await get().initializeDefaultUser();
-            return;
-          }
-          
-          set({ loading: false });
-        } catch (error) {
-          console.error('Error fetching users:', error);
-          set({ error: 'Error al cargar los usuarios', loading: false });
-        }
-      },
+      const users = querySnapshot.docs.map(convertFirestoreToUser);
       
-      getUserById: async (id: string) => {
-        set({ loading: true, error: null });
-        try {
-          const { users } = get();
-          const user = users.find(u => u.id === id) || null;
-          set({ selectedUser: user, loading: false });
-        } catch (error) {
-          console.error('Error fetching user:', error);
-          set({ error: 'Error al cargar los detalles del usuario', loading: false });
-        }
-      },
+      console.log('✅ Usuarios cargados desde Firebase:', users.length);
       
-      createUser: async (userData: Partial<User> & { password: string }) => {
-        set({ loading: true, error: null });
-        try {
-          const newUser: User = {
-            id: Math.random().toString(36).substring(2, 11),
-            username: userData.username!,
-            email: userData.email!,
-            role: userData.role || 'admin',
-            lastLogin: new Date().toISOString()
-          };
-          
-          set(state => ({ 
-            users: [...state.users, newUser],
-            loading: false 
-          }));
-          
-          return newUser;
-        } catch (error) {
-          console.error('Error creating user:', error);
-          set({ error: 'Error al crear el usuario', loading: false });
-          throw error;
-        }
-      },
-      
-      updateUser: async (id: string, userData: Partial<User>) => {
-        set({ loading: true, error: null });
-        try {
-          set(state => ({
-            users: state.users.map(user => 
-              user.id === id ? { ...user, ...userData } : user
-            ),
-            selectedUser: state.selectedUser?.id === id ? { ...state.selectedUser, ...userData } : state.selectedUser,
-            loading: false
-          }));
-        } catch (error) {
-          console.error('Error updating user:', error);
-          set({ error: 'Error al actualizar el usuario', loading: false });
-        }
-      },
-      
-      deleteUser: async (id: string) => {
-        set({ loading: true, error: null });
-        try {
-          set(state => {
-            const updatedUsers = state.users.filter(user => user.id !== id);
-            const updatedSelectedUser = state.selectedUser?.id === id ? null : state.selectedUser;
-            
-            return {
-              users: updatedUsers,
-              selectedUser: updatedSelectedUser,
-              loading: false
-            };
-          });
-        } catch (error) {
-          console.error('Error deleting user:', error);
-          set({ error: 'Error al eliminar el usuario', loading: false });
-          throw error;
-        }
-      },
-
-      initializeDefaultUser: async () => {
-        try {
-          const defaultUser: User = {
-            id: '1',
-            username: 'demian',
-            email: 'demian.83@hotmail.es',
-            role: 'superadmin',
-            lastLogin: new Date().toISOString()
-          };
-          
-          set({ users: [defaultUser], loading: false });
-        } catch (error) {
-          console.error('Error initializing default user:', error);
-          set({ error: 'Error al inicializar usuario por defecto', loading: false });
-        }
+      // Si no hay usuarios, crear el usuario por defecto
+      if (users.length === 0) {
+        await get().initializeDefaultUser();
+        return;
       }
-    }),
-    {
-      name: 'daz-users-storage',
-      version: 1
+      
+      set({ users, loading: false });
+    } catch (error) {
+      console.error('❌ Error cargando usuarios desde Firebase:', error);
+      
+      // Si hay error de permisos, intentar crear usuario por defecto
+      if (error.code === 'permission-denied') {
+        console.log('🔄 Intentando crear usuario por defecto debido a permisos...');
+        await get().initializeDefaultUser();
+      } else {
+        set({ error: 'Error al cargar los usuarios', loading: false });
+      }
     }
-  )
-);
+  },
+  
+  getUserById: async (id: string) => {
+    console.log('🔍 Buscando usuario en Firebase:', id);
+    set({ loading: true, error: null });
+    
+    try {
+      const docRef = doc(db, 'users', id);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const user = convertFirestoreToUser(docSnap);
+        console.log('👤 Usuario encontrado:', user.username);
+        set({ selectedUser: user, loading: false });
+      } else {
+        console.log('❌ Usuario no encontrado');
+        set({ selectedUser: null, loading: false });
+      }
+    } catch (error) {
+      console.error('❌ Error buscando usuario en Firebase:', error);
+      set({ error: 'Error al cargar los detalles del usuario', loading: false });
+    }
+  },
+  
+  createUser: async (userData: Partial<User> & { password: string }) => {
+    console.log('➕ Creando nuevo usuario en Firebase...');
+    set({ loading: true, error: null });
+    
+    try {
+      const newUser: Omit<User, 'id'> = {
+        username: userData.username!,
+        email: userData.email!,
+        role: userData.role || 'admin',
+        lastLogin: new Date().toISOString()
+      };
+      
+      // Guardar en Firebase
+      const usersRef = collection(db, 'users');
+      const firestoreData = convertUserToFirestore(newUser);
+      const docRef = await addDoc(usersRef, firestoreData);
+      
+      const createdUser: User = {
+        ...newUser,
+        id: docRef.id
+      };
+      
+      console.log('✅ Usuario creado en Firebase:', createdUser.username);
+      
+      // Actualizar estado local
+      set(state => ({ 
+        users: [...state.users, createdUser],
+        loading: false 
+      }));
+      
+      return createdUser;
+    } catch (error) {
+      console.error('❌ Error creando usuario en Firebase:', error);
+      set({ error: 'Error al crear el usuario', loading: false });
+      throw error;
+    }
+  },
+  
+  updateUser: async (id: string, userData: Partial<User>) => {
+    console.log('🔄 Actualizando usuario en Firebase:', id);
+    set({ loading: true, error: null });
+    
+    try {
+      // Actualizar en Firebase
+      const docRef = doc(db, 'users', id);
+      const firestoreData = convertUserToFirestore(userData);
+      await updateDoc(docRef, firestoreData);
+      
+      console.log('✅ Usuario actualizado en Firebase');
+      
+      // Actualizar estado local
+      set(state => ({
+        users: state.users.map(user => 
+          user.id === id ? { ...user, ...userData } : user
+        ),
+        selectedUser: state.selectedUser?.id === id ? { ...state.selectedUser, ...userData } : state.selectedUser,
+        loading: false
+      }));
+    } catch (error) {
+      console.error('❌ Error actualizando usuario en Firebase:', error);
+      set({ error: 'Error al actualizar el usuario', loading: false });
+      throw error;
+    }
+  },
+  
+  deleteUser: async (id: string) => {
+    console.log('🗑️ Eliminando usuario de Firebase:', id);
+    set({ loading: true, error: null });
+    
+    try {
+      // Eliminar de Firebase
+      const docRef = doc(db, 'users', id);
+      await deleteDoc(docRef);
+      
+      console.log('✅ Usuario eliminado de Firebase');
+      
+      // Actualizar estado local
+      set(state => {
+        const updatedUsers = state.users.filter(user => user.id !== id);
+        const updatedSelectedUser = state.selectedUser?.id === id ? null : state.selectedUser;
+        
+        return {
+          users: updatedUsers,
+          selectedUser: updatedSelectedUser,
+          loading: false
+        };
+      });
+    } catch (error) {
+      console.error('❌ Error eliminando usuario de Firebase:', error);
+      set({ error: 'Error al eliminar el usuario', loading: false });
+      throw error;
+    }
+  },
+
+  initializeDefaultUser: async () => {
+    console.log('🔧 Inicializando usuario por defecto en Firebase...');
+    set({ loading: true, error: null });
+    
+    try {
+      const defaultUser: Omit<User, 'id'> = {
+        username: 'demian',
+        email: 'demian.83@hotmail.es',
+        role: 'superadmin',
+        lastLogin: new Date().toISOString()
+      };
+      
+      // Crear en Firebase con ID específico
+      const docRef = doc(db, 'users', 'admin-demian');
+      const firestoreData = convertUserToFirestore(defaultUser);
+      await setDoc(docRef, firestoreData);
+      
+      const createdUser: User = {
+        ...defaultUser,
+        id: 'admin-demian'
+      };
+      
+      console.log('✅ Usuario por defecto creado en Firebase');
+      
+      set({ users: [createdUser], loading: false });
+    } catch (error) {
+      console.error('❌ Error inicializando usuario por defecto en Firebase:', error);
+      
+      // Como fallback, usar datos locales temporalmente
+      const defaultUser: User = {
+        id: 'admin-demian',
+        username: 'demian',
+        email: 'demian.83@hotmail.es',
+        role: 'superadmin',
+        lastLogin: new Date().toISOString()
+      };
+      
+      console.log('🔄 Usando usuario por defecto local como fallback');
+      set({ users: [defaultUser], loading: false, error: null });
+    }
+  }
+}));

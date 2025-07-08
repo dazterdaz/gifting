@@ -102,7 +102,9 @@ export const initializeFirebaseCollections = async () => {
     
     if (!settingsSnap.exists()) {
       await setDoc(settingsRef, initialData.settings);
-      console.log('✅ Configuración del sitio creada');
+      console.log('✅ Configuración del sitio creada en Firebase');
+    } else {
+      console.log('ℹ️ Configuración del sitio ya existe en Firebase');
     }
 
     // 2. Crear usuario administrador
@@ -112,7 +114,9 @@ export const initializeFirebaseCollections = async () => {
       
       if (!userSnap.exists()) {
         await setDoc(userRef, user);
-        console.log(`✅ Usuario ${user.username} creado`);
+        console.log(`✅ Usuario ${user.username} creado en Firebase`);
+      } else {
+        console.log(`ℹ️ Usuario ${user.username} ya existe en Firebase`);
       }
     }
 
@@ -133,7 +137,9 @@ export const initializeFirebaseCollections = async () => {
           createdAt: Timestamp.now(),
           description: `Colección ${collectionName} inicializada`
         });
-        console.log(`✅ Colección ${collectionName} inicializada`);
+        console.log(`✅ Colección ${collectionName} inicializada en Firebase`);
+      } else {
+        console.log(`ℹ️ Colección ${collectionName} ya existe en Firebase`);
       }
     }
 
@@ -142,6 +148,13 @@ export const initializeFirebaseCollections = async () => {
     return true;
   } catch (error) {
     console.error('❌ Error inicializando colecciones de Firebase:', error);
+    
+    // Si hay error de permisos, no fallar completamente
+    if (error.code === 'permission-denied') {
+      console.log('⚠️ Permisos insuficientes para inicializar Firebase, continuando...');
+      return false;
+    }
+    
     throw error;
   }
 };
@@ -165,6 +178,13 @@ export const checkFirebaseConnection = async () => {
     }
   } catch (error) {
     console.error('❌ Error de conexión con Firebase:', error);
+    
+    // Si hay error de permisos, aún consideramos que hay conexión
+    if (error.code === 'permission-denied') {
+      console.log('⚠️ Conexión establecida pero con permisos limitados');
+      return true;
+    }
+    
     return false;
   }
 };
