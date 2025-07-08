@@ -49,6 +49,13 @@ const GiftcardCreateForm: React.FC = () => {
   const onSubmit = async (data: GiftcardFormValues) => {
     if (!user) return;
     
+    console.log('📝 Enviando formulario de giftcard:', {
+      buyer: data.buyerName,
+      recipient: data.recipientName,
+      amount: data.amount,
+      duration: data.duration
+    });
+    
     setIsSubmitting(true);
     try {
       const giftcardData = {
@@ -63,19 +70,28 @@ const GiftcardCreateForm: React.FC = () => {
           phone: data.recipientPhone
         },
         amount: data.amount,
-        duration: parseInt(data.duration.toString())
+        duration: data.duration ? parseInt(data.duration.toString()) : 90
       };
+      
+      console.log('🎫 Datos preparados para crear giftcard:', giftcardData);
       
       const newGiftcard = await createGiftcard(giftcardData);
       
-      await logActivity({
-        userId: user.id,
-        username: user.username,
-        action: 'created',
-        targetType: 'giftcard',
-        targetId: newGiftcard.id,
-        details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration} días`
-      });
+      console.log('✅ Giftcard creada exitosamente:', newGiftcard.number);
+      
+      // Intentar registrar actividad, pero no fallar si hay error
+      try {
+        await logActivity({
+          userId: user.id,
+          username: user.username,
+          action: 'created',
+          targetType: 'giftcard',
+          targetId: newGiftcard.id,
+          details: `Creó giftcard ${newGiftcard.number} con duración de ${data.duration || 90} días`
+        });
+      } catch (activityError) {
+        console.warn('⚠️ Error registrando actividad (no crítico):', activityError);
+      }
       
       toast.success(t('common.success'), {
         duration: 3000,
@@ -85,7 +101,13 @@ const GiftcardCreateForm: React.FC = () => {
       
     } catch (error) {
       console.error('Error creating giftcard:', error);
-      toast.error(t('common.error'), {
+      
+      let errorMessage = t('common.error');
+      if (error.message && error.message !== 'Error al crear la tarjeta de regalo') {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage, {
         duration: 3000,
       });
     } finally {

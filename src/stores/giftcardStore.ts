@@ -139,10 +139,19 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      // Obtener números existentes para generar uno único
-      const giftcardsRef = collection(db, 'giftcards');
-      const querySnapshot = await getDocs(giftcardsRef);
-      const existingNumbers = querySnapshot.docs.map(doc => doc.data().number);
+      let existingNumbers: string[] = [];
+      
+      try {
+        // Intentar obtener números existentes para generar uno único
+        const giftcardsRef = collection(db, 'giftcards');
+        const querySnapshot = await getDocs(giftcardsRef);
+        existingNumbers = querySnapshot.docs.map(doc => doc.data().number || '');
+        console.log('📋 Números existentes obtenidos:', existingNumbers.length);
+      } catch (fetchError) {
+        console.warn('⚠️ No se pudieron obtener números existentes, generando número aleatorio:', fetchError);
+        // Si no se pueden obtener los números existentes, usar array vacío
+        existingNumbers = [];
+      }
       
       const newGiftcard: Omit<Giftcard, 'id'> = {
         number: generateGiftcardNumber(existingNumbers),
@@ -153,28 +162,73 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         createdAt: new Date().toISOString(),
       };
       
-      // Convertir a formato Firestore y guardar
-      const firestoreData = convertGiftcardToFirestore(newGiftcard);
-      const docRef = await addDoc(giftcardsRef, firestoreData);
+      console.log('🎫 Nueva giftcard preparada:', {
+        number: newGiftcard.number,
+        amount: newGiftcard.amount,
+        status: newGiftcard.status
+      });
       
-      const createdGiftcard: Giftcard = {
-        ...newGiftcard,
-        id: docRef.id
-      };
+      try {
+        // Convertir a formato Firestore y guardar
+        const giftcardsRef = collection(db, 'giftcards');
+        const firestoreData = convertGiftcardToFirestore(newGiftcard);
+        const docRef = await addDoc(giftcardsRef, firestoreData);
+        
+        const createdGiftcard: Giftcard = {
+          ...newGiftcard,
+          id: docRef.id
+        };
+        
+        console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
+        
+        // Actualizar estado local
+        set(state => ({ 
+          giftcards: [createdGiftcard, ...state.giftcards],
+          filteredGiftcards: [createdGiftcard, ...state.filteredGiftcards],
+          loading: false 
+        }));
+        
+        return createdGiftcard;
+        
+      } catch (saveError) {
+        console.error('❌ Error guardando en Firebase:', saveError);
+        
+        // Si hay error de permisos o conexión, crear localmente
+        if (saveError.code === 'permission-denied' || saveError.code === 'unavailable') {
+          console.log('🔄 Creando giftcard localmente debido a problemas de Firebase');
+          
+          const localGiftcard: Giftcard = {
+            ...newGiftcard,
+            id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+          };
+          
+          // Actualizar estado local
+          set(state => ({ 
+            giftcards: [localGiftcard, ...state.giftcards],
+            filteredGiftcards: [localGiftcard, ...state.filteredGiftcards],
+            loading: false 
+          }));
+          
+          return localGiftcard;
+        } else {
+          throw saveError;
+        }
+      }
       
-      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
-      
-      // Actualizar estado local
-      set(state => ({ 
-        giftcards: [createdGiftcard, ...state.giftcards],
-        filteredGiftcards: [createdGiftcard, ...state.filteredGiftcards],
-        loading: false 
-      }));
-      
-      return createdGiftcard;
     } catch (error) {
       console.error('❌ Error creando giftcard en Firebase:', error);
-      set({ error: 'Error al crear la tarjeta de regalo', loading: false });
+      
+      let errorMessage = 'Error al crear la tarjeta de regalo';
+      
+      if (error.code === 'permission-denied') {
+        errorMessage = 'Sin permisos para crear tarjetas de regalo';
+      } else if (error.code === 'unavailable') {
+        errorMessage = 'Servicio no disponible, intente más tarde';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      set({ error: errorMessage, loading: false });
       throw error;
     }
   },

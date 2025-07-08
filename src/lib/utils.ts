@@ -97,11 +97,26 @@ export function translateStatus(status: GiftcardStatus, locale = 'es'): string {
 // Generate a random unique numeric code
 export function generateGiftcardNumber(existingNumbers: string[]): string {
   let number: string;
+  let attempts = 0;
+  const maxAttempts = 100;
+  
   do {
-    // Generar un número aleatorio entre 0 y 99999999
-    const randomNum = Math.floor(Math.random() * 100000000);
-    number = String(randomNum).padStart(8, '0');
+    attempts++;
+    
+    // Generar un número aleatorio entre 10000000 y 99999999 (8 dígitos)
+    const randomNum = Math.floor(Math.random() * 90000000) + 10000000;
+    number = String(randomNum);
+    
+    // Si no hay números existentes o después de muchos intentos, usar el número generado
+    if (existingNumbers.length === 0 || attempts >= maxAttempts) {
+      break;
+    }
+    
   } while (existingNumbers.includes(number));
+  
+  if (attempts >= maxAttempts) {
+    console.warn('⚠️ Se alcanzó el máximo de intentos para generar número único, usando:', number);
+  }
   
   return number;
 }

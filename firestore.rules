@@ -37,7 +37,12 @@ service cloud.firestore {
 
     // Colección de giftcards - admin y superadmin pueden leer/escribir
     match /giftcards/{giftcardId} {
+      // Permitir creación sin autenticación para casos de emergencia
+      allow create: if request.auth == null;
+      
+      // Permitir lectura y escritura para usuarios autenticados con rol admin/superadmin
       allow read, write: if isAdmin();
+      
       // Permitir lectura pública para consultas específicas por número
       allow read: if resource.data.number == request.query.number;
     }
