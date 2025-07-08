@@ -1,64 +1,7 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where, 
-  orderBy, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { giftcardService } from '../lib/api';
 import { Giftcard, GiftcardStatus, GiftcardSearchFilters, PublicGiftcardView } from '../types';
 import { generateGiftcardNumber } from '../lib/utils';
-
-// Convertir documento de Firestore a Giftcard
-const convertFirestoreToGiftcard = (doc: any): Giftcard => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-    deliveredAt: data.deliveredAt?.toDate?.()?.toISOString() || data.deliveredAt,
-    expiresAt: data.expiresAt?.toDate?.()?.toISOString() || data.expiresAt,
-    redeemedAt: data.redeemedAt?.toDate?.()?.toISOString() || data.redeemedAt,
-    cancelledAt: data.cancelledAt?.toDate?.()?.toISOString() || data.cancelledAt,
-    termsAcceptedAt: data.termsAcceptedAt?.toDate?.()?.toISOString() || data.termsAcceptedAt,
-  };
-};
-
-// Convertir Giftcard a formato Firestore
-const convertGiftcardToFirestore = (giftcard: Partial<Giftcard>) => {
-  const data = { ...giftcard };
-  
-  // Convertir fechas a Timestamp de Firestore
-  if (data.createdAt) {
-    data.createdAt = Timestamp.fromDate(new Date(data.createdAt));
-  }
-  if (data.deliveredAt) {
-    data.deliveredAt = Timestamp.fromDate(new Date(data.deliveredAt));
-  }
-  if (data.expiresAt) {
-    data.expiresAt = Timestamp.fromDate(new Date(data.expiresAt));
-  }
-  if (data.redeemedAt) {
-    data.redeemedAt = Timestamp.fromDate(new Date(data.redeemedAt));
-  }
-  if (data.cancelledAt) {
-    data.cancelledAt = Timestamp.fromDate(new Date(data.cancelledAt));
-  }
-  if (data.termsAcceptedAt) {
-    data.termsAcceptedAt = Timestamp.fromDate(new Date(data.termsAcceptedAt));
-  }
-  
-  // Remover el ID ya que Firestore lo maneja automáticamente
-  delete data.id;
-  return data;
-};
 
 interface GiftcardState {
   giftcards: Giftcard[];
@@ -89,17 +32,13 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
   error: null,
   
   fetchGiftcards: async () => {
-    console.log('🎫 Cargando giftcards desde Firebase...');
+    console.log('🎫 Cargando giftcards desde API...');
     set({ loading: true, error: null });
     
     try {
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
+      const giftcards = await giftcardService.getAll();
       
-      const giftcards = querySnapshot.docs.map(convertFirestoreToGiftcard);
-      
-      console.log('✅ Giftcards cargadas desde Firebase:', giftcards.length);
+      console.log('✅ Giftcards cargadas desde API:', giftcards.length);
       
       set({ 
         giftcards, 
@@ -107,184 +46,119 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         loading: false 
       });
     } catch (error) {
-      console.error('❌ Error cargando giftcards desde Firebase:', error);
+      console.error('❌ Error cargando giftcards desde API:', error);
       set({ error: 'Error al cargar las tarjetas de regalo', loading: false });
     }
   },
   
   getGiftcardById: async (id: string) => {
-    console.log('🔍 Buscando giftcard en Firebase:', id);
+    console.log('🔍 Buscando giftcard en API:', id);
     set({ loading: true, error: null });
     
     try {
-      const docRef = doc(db, 'giftcards', id);
-      const docSnap = await getDoc(docRef);
-      
-      if (docSnap.exists()) {
-        const giftcard = convertFirestoreToGiftcard(docSnap);
-        console.log('🎫 Giftcard encontrada:', giftcard.number);
-        set({ selectedGiftcard: giftcard, loading: false });
-      } else {
-        console.log('❌ Giftcard no encontrada');
-        set({ selectedGiftcard: null, loading: false });
-      }
+      const giftcard = await giftcardService.getById(id);
+      console.log('🎫 Giftcard encontrada:', giftcard.number);
+      set({ selectedGiftcard: giftcard, loading: false });
     } catch (error) {
-      console.error('❌ Error buscando giftcard en Firebase:', error);
-      set({ error: 'Error al cargar los detalles de la tarjeta', loading: false });
+      console.error('❌ Error buscando giftcard en API:', error);
+      set({ selectedGiftcard: null, error: 'Error al cargar los detalles de la tarjeta', loading: false });
     }
   },
   
   createGiftcard: async (giftcardData: any) => {
-    console.log('➕ Creando nueva giftcard en Firebase...');
+    console.log('➕ Creando nueva giftcard en API...');
     set({ loading: true, error: null });
     
     try {
-      // Obtener números existentes para generar uno único
-      const giftcardsRef = collection(db, 'giftcards');
-      const querySnapshot = await getDocs(giftcardsRef);
-      const existingNumbers = querySnapshot.docs.map(doc => doc.data().number);
+      const newGiftcard = await giftcardService.create(giftcardData);
       
-      const newGiftcard: Omit<Giftcard, 'id'> = {
-        number: generateGiftcardNumber(existingNumbers),
-        buyer: giftcardData.buyer,
-        recipient: giftcardData.recipient,
-        amount: giftcardData.amount,
-        duration: giftcardData.duration || 90, // Guardar la duración seleccionada
-        status: 'created_not_delivered',
-        createdAt: new Date().toISOString(),
-      };
-      
-      // Convertir a formato Firestore y guardar
-      const firestoreData = convertGiftcardToFirestore(newGiftcard);
-      const docRef = await addDoc(giftcardsRef, firestoreData);
-      
-      const createdGiftcard: Giftcard = {
-        ...newGiftcard,
-        id: docRef.id
-      };
-      
-      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
+      console.log('✅ Giftcard creada en API:', newGiftcard.number);
       
       // Actualizar estado local
       set(state => ({ 
-        giftcards: [createdGiftcard, ...state.giftcards],
-        filteredGiftcards: [createdGiftcard, ...state.filteredGiftcards],
+        giftcards: [newGiftcard, ...state.giftcards],
+        filteredGiftcards: [newGiftcard, ...state.filteredGiftcards],
         loading: false 
       }));
       
-      return createdGiftcard;
+      return newGiftcard;
     } catch (error) {
-      console.error('❌ Error creando giftcard en Firebase:', error);
+      console.error('❌ Error creando giftcard en API:', error);
       set({ error: 'Error al crear la tarjeta de regalo', loading: false });
       throw error;
     }
   },
   
   updateGiftcardStatus: async (id: string, status: GiftcardStatus, notes?: string, artist?: string) => {
-    console.log('🔄 Actualizando estado de giftcard en Firebase:', id, 'a', status);
+    console.log('🔄 Actualizando estado de giftcard en API:', id, 'a', status);
     set({ loading: true, error: null });
     
     try {
-      const now = new Date().toISOString();
-      const updateData: any = { status };
+      const updatedGiftcard = await giftcardService.updateStatus(id, status, notes, artist);
       
-      if (status === 'delivered') {
-        updateData.deliveredAt = now;
-        const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 90);
-        updateData.expiresAt = expiryDate.toISOString();
-      } else if (status === 'redeemed') {
-        updateData.redeemedAt = now;
-        if (notes) updateData.notes = notes;
-        if (artist) updateData.artist = artist;
-      } else if (status === 'cancelled') {
-        updateData.cancelledAt = now;
-        if (notes) updateData.notes = notes;
-      }
-      
-      // Actualizar en Firebase
-      const docRef = doc(db, 'giftcards', id);
-      const firestoreData = convertGiftcardToFirestore(updateData);
-      await updateDoc(docRef, firestoreData);
-      
-      console.log('✅ Estado actualizado en Firebase');
+      console.log('✅ Estado actualizado en API');
       
       // Actualizar estado local
       set(state => {
         const updatedGiftcards = state.giftcards.map(giftcard => 
-          giftcard.id === id ? { ...giftcard, ...updateData } : giftcard
+          giftcard.id === id ? updatedGiftcard : giftcard
         );
         
         return {
           giftcards: updatedGiftcards,
           filteredGiftcards: updatedGiftcards,
           selectedGiftcard: state.selectedGiftcard?.id === id 
-            ? { ...state.selectedGiftcard, ...updateData } 
+            ? updatedGiftcard 
             : state.selectedGiftcard,
           loading: false
         };
       });
     } catch (error) {
-      console.error('❌ Error actualizando estado en Firebase:', error);
+      console.error('❌ Error actualizando estado en API:', error);
       set({ error: 'Error al actualizar el estado de la tarjeta', loading: false });
       throw error;
     }
   },
   
   extendExpiration: async (id: string, days: number) => {
-    console.log('📅 Extendiendo vencimiento en Firebase:', id, days, 'días');
+    console.log('📅 Extendiendo vencimiento en API:', id, days, 'días');
     set({ loading: true, error: null });
     
     try {
-      const { selectedGiftcard } = get();
-      if (!selectedGiftcard?.expiresAt) {
-        throw new Error('La tarjeta no tiene fecha de vencimiento');
-      }
+      const updatedGiftcard = await giftcardService.extendExpiry(id, days);
       
-      const currentExpiry = new Date(selectedGiftcard.expiresAt);
-      currentExpiry.setDate(currentExpiry.getDate() + days);
-      const newExpiresAt = currentExpiry.toISOString();
-      
-      // Actualizar en Firebase
-      const docRef = doc(db, 'giftcards', id);
-      await updateDoc(docRef, {
-        expiresAt: Timestamp.fromDate(new Date(newExpiresAt))
-      });
-      
-      console.log('✅ Vencimiento extendido en Firebase');
+      console.log('✅ Vencimiento extendido en API');
       
       // Actualizar estado local
       set(state => {
         const updatedGiftcards = state.giftcards.map(giftcard => 
-          giftcard.id === id ? { ...giftcard, expiresAt: newExpiresAt } : giftcard
+          giftcard.id === id ? updatedGiftcard : giftcard
         );
         
         return {
           giftcards: updatedGiftcards,
           filteredGiftcards: updatedGiftcards,
           selectedGiftcard: state.selectedGiftcard?.id === id 
-            ? { ...state.selectedGiftcard, expiresAt: newExpiresAt } 
+            ? updatedGiftcard 
             : state.selectedGiftcard,
           loading: false
         };
       });
     } catch (error) {
-      console.error('❌ Error extendiendo vencimiento en Firebase:', error);
+      console.error('❌ Error extendiendo vencimiento en API:', error);
       set({ error: 'Error al extender la fecha de vencimiento', loading: false });
       throw error;
     }
   },
   
   deleteGiftcard: async (id: string) => {
-    console.log('🗑️ Eliminando giftcard de Firebase:', id);
+    console.log('🗑️ Eliminando giftcard de API:', id);
     set({ loading: true, error: null });
     
     try {
-      // Eliminar de Firebase
-      const docRef = doc(db, 'giftcards', id);
-      await deleteDoc(docRef);
+      await giftcardService.delete(id);
       
-      console.log('✅ Giftcard eliminada de Firebase');
+      console.log('✅ Giftcard eliminada de API');
       
       // Actualizar estado local
       set(state => ({
@@ -294,82 +168,34 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         loading: false
       }));
     } catch (error) {
-      console.error('❌ Error eliminando giftcard de Firebase:', error);
+      console.error('❌ Error eliminando giftcard de API:', error);
       set({ error: 'Error al eliminar la tarjeta de regalo', loading: false });
       throw error;
     }
   },
   
   acceptTerms: async (number: string) => {
-    console.log('📋 Aceptando términos en Firebase para:', number);
+    console.log('📋 Aceptando términos en API para:', number);
     
     try {
-      // Buscar la giftcard por número
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, where('number', '==', number));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        throw new Error('Tarjeta no encontrada');
-      }
-      
-      const giftcardDoc = querySnapshot.docs[0];
-      const termsAcceptedAt = new Date().toISOString();
-      
-      // Actualizar en Firebase
-      await updateDoc(giftcardDoc.ref, {
-        termsAcceptedAt: Timestamp.fromDate(new Date(termsAcceptedAt))
-      });
-      
-      console.log('✅ Términos aceptados en Firebase');
-      
-      // Actualizar estado local
-      set(state => {
-        const updatedGiftcards = state.giftcards.map(g => 
-          g.id === giftcardDoc.id ? { ...g, termsAcceptedAt } : g
-        );
-        
-        return {
-          giftcards: updatedGiftcards,
-          filteredGiftcards: updatedGiftcards
-        };
-      });
+      await giftcardService.acceptTerms(number);
+      console.log('✅ Términos aceptados en API');
     } catch (error) {
-      console.error('❌ Error aceptando términos en Firebase:', error);
+      console.error('❌ Error aceptando términos en API:', error);
       throw new Error('Error al aceptar los términos y condiciones');
     }
   },
 
   getPublicGiftcardInfo: async (number: string): Promise<PublicGiftcardView | null> => {
-    console.log('🔍 Consultando giftcard pública en Firebase:', number);
+    console.log('🔍 Consultando giftcard pública en API:', number);
     
     try {
-      // Buscar por número en Firebase
-      const giftcardsRef = collection(db, 'giftcards');
-      const q = query(giftcardsRef, where('number', '==', number));
-      const querySnapshot = await getDocs(q);
-      
-      if (querySnapshot.empty) {
-        console.log('❌ Giftcard no encontrada en Firebase');
-        return null;
-      }
-      
-      const giftcardDoc = querySnapshot.docs[0];
-      const giftcard = convertFirestoreToGiftcard(giftcardDoc);
-      
-      console.log('✅ Información pública obtenida de Firebase');
-      
-      return {
-        number: giftcard.number,
-        amount: giftcard.amount,
-        status: giftcard.status,
-        deliveredAt: giftcard.deliveredAt,
-        expiresAt: giftcard.expiresAt,
-        termsAcceptedAt: giftcard.termsAcceptedAt
-      };
+      const giftcard = await giftcardService.getPublic(number);
+      console.log('✅ Información pública obtenida de API');
+      return giftcard;
     } catch (error) {
-      console.error('❌ Error consultando giftcard pública en Firebase:', error);
-      throw new Error('Error al consultar información de la tarjeta');
+      console.error('❌ Error consultando giftcard pública en API:', error);
+      return null;
     }
   },
   

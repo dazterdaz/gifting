@@ -1,44 +1,31 @@
 import { useAuthStore } from '../stores/authStore';
+import { authService, apiClient } from './api';
 import { User, LoginCredentials } from '../types';
 
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
   console.log('🔐 Iniciando proceso de login...');
   
-  // Simulating API call delay
-  await new Promise(resolve => setTimeout(resolve, 500));
-  
-  // Usuario hardcodeado para demo
-  const demoUser = {
-    id: '1',
-    username: 'demian',
-    email: 'demian.83@hotmail.es',
-    password: '@Llamasami1',
-    role: 'superadmin' as const,
-    lastLogin: new Date().toISOString()
-  };
-  
-  console.log('🔍 Verificando credenciales...');
-  console.log('Usuario ingresado:', usernameOrEmail);
-  console.log('Usuario esperado:', demoUser.username);
-  
-  // Verificar credenciales (solo username, no email)
-  if (usernameOrEmail.toLowerCase() !== demoUser.username.toLowerCase() || password !== demoUser.password) {
-    console.log('❌ Credenciales incorrectas');
+  try {
+    const result = await authService.login({ usernameOrEmail, password });
+    
+    if (result) {
+      console.log('✅ Credenciales correctas');
+      
+      // Configurar token en el cliente API
+      apiClient.setToken(result.token);
+      
+      console.log('🎫 Token configurado:', result.token);
+      console.log('👤 Usuario autenticado:', result.user);
+      
+      return result;
+    } else {
+      console.log('❌ Credenciales incorrectas');
+      return null;
+    }
+  } catch (error) {
+    console.error('💥 Error en login:', error);
     return null;
   }
-  
-  console.log('✅ Credenciales correctas');
-  
-  // Generate mock token
-  const token = `mock-token-${Math.random().toString(36).substring(2, 10)}`;
-  
-  // Strip password from returned user object
-  const { password: _, ...safeUser } = demoUser;
-  
-  console.log('🎫 Token generado:', token);
-  console.log('👤 Usuario autenticado:', safeUser);
-  
-  return { user: safeUser, token };
 };
 
 export const logout = async (): Promise<void> => {
@@ -48,6 +35,16 @@ export const logout = async (): Promise<void> => {
     console.log('👋 Cerrando sesión para:', user.username);
   }
   
+  try {
+    await authService.logout();
+  } catch (error) {
+    console.warn('⚠️ Error al cerrar sesión en el servidor:', error);
+  }
+  
+  // Limpiar token del cliente
+  apiClient.setToken(null);
+  
+  // Limpiar store local
   useAuthStore.getState().logout();
 };
 
@@ -57,13 +54,15 @@ export const initializeUser = async (): Promise<void> => {
   // Check if there's a stored session
   if (authStore.isAuthenticated && authStore.user && authStore.token) {
     console.log('✅ Usuario ya autenticado:', authStore.user.username);
+    // Configurar token en el cliente API
+    apiClient.setToken(authStore.token);
   } else {
     console.log('ℹ️ No hay sesión activa');
   }
 };
 
 export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
-  // En una aplicación real, esto sería una llamada a la API para actualizar la contraseña
+  // Implementar cuando sea necesario
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
 };
