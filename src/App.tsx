@@ -21,7 +21,7 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
 import { initializeUser } from './lib/auth';
-import { initializeFirebaseCollections, checkFirebaseConnection } from './lib/firebaseInit';
+import { initializeFirebaseCollections } from './lib/firebaseInit';
 import toast from 'react-hot-toast';
 
 function App() {
@@ -42,6 +42,16 @@ function App() {
       }, 10000); // 10 segundos máximo
       
       try {
+        // Inicializar Firebase primero
+        console.log('🔥 Inicializando Firebase...');
+        await Promise.race([
+          initializeFirebaseCollections(),
+          new Promise(resolve => setTimeout(() => {
+            console.warn('⚠️ Timeout inicializando Firebase, continuando...');
+            resolve(false);
+          }, 5000))
+        ]);
+        
         // Inicializar en paralelo con timeouts individuales
         const initPromises = [
           // Inicializar usuario con timeout
@@ -72,7 +82,7 @@ function App() {
         // Esperar máximo 5 segundos por todas las inicializaciones
         await Promise.race([
           Promise.all(initPromises),
-          new Promise(resolve => setTimeout(resolve, 5000))
+          new Promise(resolve => setTimeout(resolve, 3000))
         ]);
         
         console.log('✅ Aplicación inicializada correctamente');

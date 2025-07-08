@@ -2,7 +2,9 @@ import {
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  User as FirebaseUser 
+  User as FirebaseUser,
+  setDoc,
+  Timestamp
 } from './firebase';
 import { auth, db, doc, getDoc } from './firebase';
 import { useAuthStore } from '../stores/authStore';

@@ -99,6 +99,16 @@ const Login = () => {
         
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow rounded-lg sm:px-10">
+            <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+              <h3 className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">
+                🔐 Credenciales de Acceso
+              </h3>
+              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <p><strong>Usuario:</strong> demian</p>
+                <p><strong>Contraseña:</strong> @Llamasami1</p>
+              </div>
+            </div>
+            
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
               <Input
                 label="Usuario"
