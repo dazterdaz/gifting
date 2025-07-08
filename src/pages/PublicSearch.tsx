@@ -156,7 +156,7 @@ const PublicSearch = () => {
             }}
           />
           <h1 className="mt-2 text-3xl font-extrabold text-gray-900 dark:text-white">
-            {settings.siteName}
+            Sistema de Giftcards
           </h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             {t('giftcards.public.title')}
@@ -301,7 +301,7 @@ const PublicSearch = () => {
                   className="text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 flex items-center"
                 >
                   <ExternalLink className="h-4 w-4 mr-1" />
-                  Daz Tattoo
+                  Volver al inicio
                 </a>
                 
                 <Button 
@@ -320,7 +320,7 @@ const PublicSearch = () => {
         {/* Información adicional */}
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            ¿Problemas con su consulta? Contacte directamente con Daz Tattoo
+            ¿Problemas con su consulta? Contacte directamente con el administrador
           </p>
         </div>
       </div>

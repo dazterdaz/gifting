@@ -82,12 +82,18 @@ const Login = () => {
         <div className="text-center">
           <Gift className="mx-auto h-16 w-16 text-primary-600 dark:text-primary-400" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">
-            Daz Giftcard Register
+            Sistema de Giftcards
           </h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
             Panel de Administración
           </p>
           <div className="mt-2">
+            <Link
+              to="/"
+              className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline text-sm mr-4"
+            >
+              ← Volver al inicio
+            </Link>
             <Link
               to="/buscar"
               className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline text-sm"
