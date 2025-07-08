@@ -39,38 +39,26 @@ function App() {
         // Inicializar usuario primero (no depende de Firebase)
         await initializeUser();
         
-        // Luego inicializar Firebase en paralelo con configuración por defecto
-        const initPromises = [
-          // Configuración con fallback
-          fetchSettings().catch(error => {
-            console.warn('⚠️ Error cargando configuración, usando por defecto:', error);
-            return Promise.resolve();
-          }),
+        // Inicializar Firebase primero
+        try {
+          console.log('🔥 Verificando conexión con Firebase...');
+          const isConnected = await checkFirebaseConnection();
           
-          // Usuarios con fallback
-          fetchUsers().catch(error => {
-            console.warn('⚠️ Error cargando usuarios, usando por defecto:', error);
-            return Promise.resolve();
-          }),
-          
-          // Firebase init en background (no bloquea la carga)
-          Promise.resolve().then(async () => {
-            try {
-              const isConnected = await checkFirebaseConnection();
-              if (isConnected) {
-                await initializeFirebaseCollections();
-                console.log('✅ Firebase inicializado correctamente');
-              }
-            } catch (error) {
-              console.warn('⚠️ Firebase no disponible, continuando sin él:', error);
-            }
-          })
-        ];
+          if (isConnected) {
+            console.log('🔥 Inicializando colecciones de Firebase...');
+            await initializeFirebaseCollections();
+            console.log('✅ Firebase inicializado correctamente');
+          } else {
+            console.warn('⚠️ No se pudo conectar con Firebase');
+          }
+        } catch (firebaseError) {
+          console.warn('⚠️ Error con Firebase, continuando sin él:', firebaseError);
+        }
         
-        // Esperar máximo 3 segundos para la inicialización
-        await Promise.race([
-          Promise.all(initPromises),
-          new Promise(resolve => setTimeout(resolve, 3000))
+        // Luego cargar datos de la aplicación
+        await Promise.all([
+          fetchSettings(),
+          fetchUsers()
         ]);
 
         console.log('✅ Aplicación inicializada correctamente');
