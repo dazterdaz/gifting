@@ -7,6 +7,12 @@ import {
 } from './firebase';
 import { db } from './firebase';
 
+import { 
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword 
+} from './firebase';
+import { auth } from './firebase';
+
 // Estructura de datos inicial para las colecciones
 const initialData = {
   // Configuración del sitio
@@ -95,6 +101,9 @@ const initialData = {
 export const initializeFirebaseCollections = async () => {
   try {
     console.log('🔄 Inicializando colecciones de Firebase...');
+    
+    // 1. Crear usuario de autenticación si no existe
+    await initializeAuthUser();
 
     // 1. Crear configuración del sitio
     const settingsRef = doc(db, 'settings', 'site-config');
@@ -148,14 +157,74 @@ export const initializeFirebaseCollections = async () => {
     return true;
   } catch (error) {
     console.error('❌ Error inicializando colecciones de Firebase:', error);
+    throw error;
+  }
+};
+
+// Función para inicializar el usuario de autenticación
+const initializeAuthUser = async () => {
+  try {
+    console.log('👤 Inicializando usuario de autenticación...');
     
-    // Si hay error de permisos, no fallar completamente
-    if (error.code === 'permission-denied') {
-      console.log('⚠️ Permisos insuficientes para inicializar Firebase, continuando...');
-      return false;
+    const email = 'demian.83@hotmail.es';
+    const password = '@Llamasami1';
+    
+    try {
+      // Intentar crear el usuario
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('✅ Usuario de autenticación creado:', userCredential.user.uid);
+      
+      // Crear documento de usuario en Firestore
+      const userRef = doc(db, 'users', userCredential.user.uid);
+      await setDoc(userRef, {
+        username: 'demian',
+        email: email,
+        role: 'superadmin',
+        createdAt: Timestamp.now(),
+        lastLogin: Timestamp.now(),
+        isActive: true
+      });
+      
+      console.log('✅ Documento de usuario creado en Firestore');
+      
+    } catch (createError) {
+      if (createError.code === 'auth/email-already-in-use') {
+        console.log('ℹ️ Usuario de autenticación ya existe');
+        
+        // Verificar que el documento de Firestore también existe
+        try {
+          await signInWithEmailAndPassword(auth, email, password);
+          const currentUser = auth.currentUser;
+          
+          if (currentUser) {
+            const userRef = doc(db, 'users', currentUser.uid);
+            const userSnap = await getDoc(userRef);
+            
+            if (!userSnap.exists()) {
+              console.log('📝 Creando documento de usuario faltante en Firestore...');
+              await setDoc(userRef, {
+                username: 'demian',
+                email: email,
+                role: 'superadmin',
+                createdAt: Timestamp.now(),
+                lastLogin: Timestamp.now(),
+                isActive: true
+              });
+              console.log('✅ Documento de usuario creado en Firestore');
+            }
+          }
+        } catch (signInError) {
+          console.warn('⚠️ Error verificando usuario existente:', signInError);
+        }
+      } else {
+        console.error('❌ Error creando usuario de autenticación:', createError);
+        throw createError;
+      }
     }
     
-    throw error;
+  } catch (error) {
+    console.error('❌ Error inicializando usuario de autenticación:', error);
+    // No fallar la inicialización completa por esto
   }
 };
 
@@ -178,13 +247,6 @@ export const checkFirebaseConnection = async () => {
     }
   } catch (error) {
     console.error('❌ Error de conexión con Firebase:', error);
-    
-    // Si hay error de permisos, aún consideramos que hay conexión
-    if (error.code === 'permission-denied') {
-      console.log('⚠️ Conexión establecida pero con permisos limitados');
-      return true;
-    }
-    
     return false;
   }
 };

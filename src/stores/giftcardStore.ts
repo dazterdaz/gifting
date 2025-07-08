@@ -101,34 +101,6 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       
       console.log('✅ Giftcards cargadas desde Firebase:', giftcards.length);
       
-      // Cargar también giftcards locales si existen
-      try {
-        const localGiftcards = JSON.parse(localStorage.getItem('daz-local-giftcards') || '[]');
-        if (localGiftcards.length > 0) {
-          console.log('📱 Giftcards locales encontradas:', localGiftcards.length);
-          // Combinar con las de Firebase, evitando duplicados
-          const allGiftcards = [...giftcards];
-          localGiftcards.forEach(localCard => {
-            if (!allGiftcards.find(card => card.number === localCard.number)) {
-              allGiftcards.push(localCard);
-            }
-          });
-          
-          // Ordenar por fecha de creación
-          allGiftcards.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          
-          set({ 
-            giftcards: allGiftcards, 
-            filteredGiftcards: allGiftcards, 
-            loading: false,
-            error: null
-          });
-          return;
-        }
-      } catch (localError) {
-        console.warn('⚠️ Error cargando giftcards locales:', localError);
-      }
-      
       set({ 
         giftcards, 
         filteredGiftcards: giftcards, 
@@ -137,29 +109,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       });
     } catch (error) {
       console.error('❌ Error cargando giftcards desde Firebase:', error);
-      
-      // Intentar cargar giftcards locales como fallback
-      try {
-        const localGiftcards = JSON.parse(localStorage.getItem('daz-local-giftcards') || '[]');
-        console.log('📱 Usando giftcards locales como fallback:', localGiftcards.length);
-        
-        set({ 
-          giftcards: localGiftcards,
-          filteredGiftcards: localGiftcards,
-          loading: false,
-          error: null
-        });
-      } catch (localError) {
-        console.warn('⚠️ Error cargando fallback local:', localError);
-        
-        // Como último recurso, usar array vacío
-        set({ 
-          giftcards: [],
-          filteredGiftcards: [],
-          loading: false,
-          error: null
-        });
-      }
+      set({ error: 'Error al cargar las tarjetas de regalo', loading: false });
     }
   },
   
@@ -193,15 +143,14 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
       let existingNumbers: string[] = [];
       
       try {
-        // Intentar obtener números existentes para generar uno único
+        // Obtener números existentes para generar uno único
         const giftcardsRef = collection(db, 'giftcards');
         const querySnapshot = await getDocs(giftcardsRef);
         existingNumbers = querySnapshot.docs.map(doc => doc.data().number || '');
         console.log('📋 Números existentes obtenidos:', existingNumbers.length);
       } catch (fetchError) {
-        console.warn('⚠️ No se pudieron obtener números existentes, generando número aleatorio:', fetchError);
-        // Si no se pueden obtener los números existentes, usar array vacío
-        existingNumbers = [];
+        console.error('❌ Error obteniendo números existentes:', fetchError);
+        throw new Error('No se pueden obtener los números existentes para generar uno único');
       }
       
       // Generar número único
@@ -223,97 +172,32 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         status: newGiftcard.status
       });
       
-      try {
-        // Convertir a formato Firestore y guardar
-        const giftcardsRef = collection(db, 'giftcards');
-        const firestoreData = convertGiftcardToFirestore(newGiftcard);
-        
-        console.log('💾 Guardando en Firebase:', firestoreData);
-        const docRef = await addDoc(giftcardsRef, firestoreData);
-        
-        const createdGiftcard: Giftcard = {
-          ...newGiftcard,
-          id: docRef.id
-        };
-        
-        console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
-        
-        // Actualizar estado local
-        set(state => ({ 
-          giftcards: [createdGiftcard, ...state.giftcards],
-          filteredGiftcards: [createdGiftcard, ...state.filteredGiftcards],
-          loading: false,
-          error: null
-        }));
-        
-        // Verificar que se guardó correctamente
-        setTimeout(async () => {
-          try {
-            const verifyDoc = await getDoc(docRef);
-            if (verifyDoc.exists()) {
-              console.log('✅ Verificación: Giftcard persiste en Firebase');
-            } else {
-              console.error('❌ Verificación: Giftcard no encontrada en Firebase');
-            }
-          } catch (verifyError) {
-            console.warn('⚠️ No se pudo verificar la persistencia:', verifyError);
-          }
-        }, 1000);
-        
-        return createdGiftcard;
-        
-      } catch (saveError) {
-        console.error('❌ Error guardando en Firebase:', saveError);
-        
-        // Si hay error de permisos o conexión, crear localmente
-        if (saveError.code === 'permission-denied' || saveError.code === 'unavailable' || saveError.code === 'unauthenticated') {
-          console.log('🔄 Creando giftcard localmente debido a problemas de Firebase');
-          
-          const localGiftcard: Giftcard = {
-            ...newGiftcard,
-            id: `local-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-          };
-          
-          console.log('💾 Giftcard local creada:', localGiftcard);
-          
-          // Actualizar estado local
-          set(state => ({ 
-            giftcards: [localGiftcard, ...state.giftcards],
-            filteredGiftcards: [localGiftcard, ...state.filteredGiftcards],
-            loading: false,
-            error: null
-          }));
-          
-          // Intentar guardar en localStorage como backup
-          try {
-            const existingLocal = JSON.parse(localStorage.getItem('daz-local-giftcards') || '[]');
-            existingLocal.push(localGiftcard);
-            localStorage.setItem('daz-local-giftcards', JSON.stringify(existingLocal));
-            console.log('💾 Giftcard guardada en localStorage como backup');
-          } catch (localStorageError) {
-            console.warn('⚠️ No se pudo guardar en localStorage:', localStorageError);
-          }
-          
-          return localGiftcard;
-        } else {
-          throw saveError;
-        }
-      }
+      // Convertir a formato Firestore y guardar
+      const giftcardsRef = collection(db, 'giftcards');
+      const firestoreData = convertGiftcardToFirestore(newGiftcard);
+      
+      console.log('💾 Guardando en Firebase...');
+      const docRef = await addDoc(giftcardsRef, firestoreData);
+      
+      const createdGiftcard: Giftcard = {
+        ...newGiftcard,
+        id: docRef.id
+      };
+      
+      console.log('✅ Giftcard creada en Firebase:', createdGiftcard.number);
+      
+      // Actualizar estado local
+      set(state => ({ 
+        giftcards: [createdGiftcard, ...state.giftcards],
+        filteredGiftcards: [createdGiftcard, ...state.filteredGiftcards],
+        loading: false 
+      }));
+      
+      return createdGiftcard;
       
     } catch (error) {
       console.error('❌ Error creando giftcard en Firebase:', error);
-      
-      let errorMessage = 'Error al crear la tarjeta de regalo';
-      
-      if (error.code === 'permission-denied') {
-        errorMessage = 'Sin permisos para crear tarjetas de regalo';
-      } else if (error.code === 'unavailable') {
-        errorMessage = 'Servicio no disponible, intente más tarde';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      set({ error: errorMessage, loading: false });
+      set({ error: 'Error al crear la tarjeta de regalo', loading: false });
       throw error;
     }
   },

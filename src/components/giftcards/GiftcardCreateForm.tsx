@@ -97,20 +97,11 @@ const GiftcardCreateForm: React.FC = () => {
         duration: 3000,
       });
       
-      // Esperar un momento antes de navegar para asegurar que se guarde
-      setTimeout(() => {
-        navigate('/giftcards');
-      }, 500);
+      navigate('/giftcards');
       
     } catch (error) {
       console.error('Error creating giftcard:', error);
-      
-      let errorMessage = t('common.error');
-      if (error.message && error.message !== 'Error al crear la tarjeta de regalo') {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage, {
+      toast.error(t('common.error'), {
         duration: 3000,
       });
     } finally {

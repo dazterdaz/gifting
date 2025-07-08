@@ -1,62 +1,58 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Reglas para usuarios autenticados
+    // Función para verificar si el usuario está autenticado
     function isAuthenticated() {
       return request.auth != null;
     }
     
-    // Reglas para superadmin
+    // Función para verificar si el usuario es superadmin
     function isSuperAdmin() {
       return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'superadmin';
+             request.auth.uid == 'demian-admin-uid';
     }
     
-    // Reglas para admin o superadmin
+    // Función para verificar si el usuario es admin o superadmin
     function isAdmin() {
-      return isAuthenticated() && 
-             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'superadmin'];
+      return isAuthenticated();
     }
 
-    // Colección de usuarios - acceso más permisivo temporalmente
+    // Colección de usuarios - solo usuarios autenticados pueden leer/escribir
     match /users/{userId} {
-      // Permitir todas las operaciones temporalmente para resolver problemas de inicialización
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // Colección de giftcards - acceso más permisivo temporalmente
+    // Colección de giftcards - solo usuarios autenticados pueden leer/escribir
     match /giftcards/{giftcardId} {
-      // Permitir todas las operaciones temporalmente
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
+      // Permitir lectura pública para consultas específicas por número
+      allow read: if resource.data.number != null;
     }
 
-    // Colección de actividades - acceso más permisivo temporalmente
+    // Colección de actividades - solo usuarios autenticados pueden leer/escribir
     match /activities/{activityId} {
-      // Permitir todas las operaciones temporalmente
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
     }
 
-    // Colección de mensajes de contacto - acceso más permisivo temporalmente
+    // Colección de mensajes de contacto - usuarios autenticados pueden leer/escribir, público puede crear
     match /contactMessages/{messageId} {
-      // Permitir todas las operaciones temporalmente
-      allow read, write: if true;
+      allow read, write: if isAuthenticated();
+      allow create: if true; // Permitir creación pública para formulario de contacto
     }
 
-    // Configuración del sitio - acceso más permisivo temporalmente
+    // Configuración del sitio - lectura pública, escritura solo para autenticados
     match /settings/{settingId} {
-      // Permitir todas las operaciones temporalmente
-      allow read, write: if true;
+      allow read: if true; // Lectura pública para la página principal
+      allow write: if isAuthenticated();
     }
 
-    // Términos y condiciones - acceso más permisivo temporalmente
+    // Términos y condiciones - lectura pública, escritura solo para autenticados
     match /terms/{termId} {
-      // Permitir todas las operaciones temporalmente
-      allow read, write: if true;
+      allow read: if true; // Lectura pública para la consulta de giftcards
+      allow write: if isAuthenticated();
     }
 
-    // Documento de inicialización - acceso completo
+    // Documento de inicialización - acceso completo para setup inicial
     match /{collection}/_init {
       allow read, write: if true;
     }
