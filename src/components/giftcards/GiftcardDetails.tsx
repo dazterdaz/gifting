@@ -180,9 +180,31 @@ const GiftcardDetails = () => {
                       }`}>
                         {isExpired 
                           ? t('giftcards.expired')
-                          : `${daysLeft} ${t('giftcards.daysLeft')}`}
+                          : `${daysLeft} ${daysLeft === 1 ? 'día restante' : 'días restantes'}`}
                       </span>
                     )}
+                    
+                    {/* Información adicional sobre el vencimiento */}
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      {selectedGiftcard.duration && (
+                        <span>Duración original: {selectedGiftcard.duration} días • </span>
+                      )}
+                      Entregada: {selectedGiftcard.deliveredAt && formatDate(selectedGiftcard.deliveredAt)}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {selectedGiftcard.status === 'created_not_delivered' && selectedGiftcard.duration && (
+                <div className="mt-4 p-3 rounded-md bg-blue-50 dark:bg-blue-900/50 flex items-center gap-2">
+                  <Clock className="h-5 w-5 text-blue-500" />
+                  <div>
+                    <span className="text-sm text-blue-600 dark:text-blue-300">
+                      <strong>Duración configurada:</strong> {selectedGiftcard.duration} días
+                    </span>
+                    <div className="mt-1 text-xs text-blue-500 dark:text-blue-400">
+                      La fecha de vencimiento se establecerá automáticamente cuando la tarjeta sea marcada como "Entregada"
+                    </div>
                   </div>
                 </div>
               )}

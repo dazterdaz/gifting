@@ -149,6 +149,7 @@ export const useGiftcardStore = create<GiftcardState>()((set, get) => ({
         buyer: giftcardData.buyer,
         recipient: giftcardData.recipient,
         amount: giftcardData.amount,
+        duration: giftcardData.duration || 90, // Guardar la duración seleccionada
         status: 'created_not_delivered',
         createdAt: new Date().toISOString(),
       };

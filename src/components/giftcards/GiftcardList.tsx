@@ -232,7 +232,7 @@ const GiftcardList: React.FC<GiftcardListProps> = ({ giftcards, loading = false 
                                 isExpiringSoon ? 'text-warning-600 dark:text-warning-400 font-medium' : 'text-gray-500 dark:text-gray-400'
                               )}
                             >
-                              {daysLeft} {t('giftcards.daysLeft')}
+                              {daysLeft} {daysLeft === 1 ? 'día restante' : 'días restantes'}
                             </span>
                           ) : (
                             <span className="text-error-600 dark:text-error-400 font-medium">
