@@ -1,41 +1,6 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  setDoc, 
-  query, 
-  orderBy, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { User } from '../types';
-
-// Convertir documento de Firestore a User
-const convertFirestoreToUser = (doc: any): User => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    lastLogin: data.lastLogin?.toDate?.()?.toISOString() || data.lastLogin,
-  };
-};
-
-// Convertir User a formato Firestore
-const convertUserToFirestore = (user: Partial<User>) => {
-  const data = { ...user };
-  
-  if (data.lastLogin) {
-    data.lastLogin = Timestamp.fromDate(new Date(data.lastLogin));
-  }
-  
-  delete data.id;
-  return data;
-};
 
 interface UserState {
   users: User[];
@@ -58,17 +23,26 @@ export const useUserStore = create<UserState>()((set, get) => ({
   error: null,
   
   fetchUsers: async () => {
-    console.log('👥 Cargando usuarios desde Firebase...');
+    console.log('👥 Cargando usuarios desde Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, orderBy('username', 'asc'));
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .order('username', { ascending: true });
       
-      const users = querySnapshot.docs.map(convertFirestoreToUser);
+      if (error) throw error;
       
-      console.log('✅ Usuarios cargados desde Firebase:', users.length);
+      const users = data.map(row => ({
+        id: row.id,
+        username: row.username,
+        email: row.email,
+        role: row.role,
+        lastLogin: row.last_login
+      }));
+      
+      console.log('✅ Usuarios cargados desde Supabase:', users.length);
       
       // Si no hay usuarios, crear el usuario por defecto
       if (users.length === 0) {
@@ -79,10 +53,10 @@ export const useUserStore = create<UserState>()((set, get) => ({
       
       set({ users, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando usuarios desde Firebase:', error);
+      console.error('❌ Error cargando usuarios desde Supabase:', error);
       
       // Para cualquier error, usar usuario por defecto local
-      console.log('🔄 Usando usuario por defecto local debido a error de Firebase');
+      console.log('🔄 Usando usuario por defecto local debido a error de Supabase');
       const defaultUser: User = {
         id: 'admin-demian',
         username: 'demian',
@@ -95,15 +69,26 @@ export const useUserStore = create<UserState>()((set, get) => ({
   },
   
   getUserById: async (id: string) => {
-    console.log('🔍 Buscando usuario en Firebase:', id);
+    console.log('🔍 Buscando usuario en Supabase:', id);
     set({ loading: true, error: null });
     
     try {
-      const docRef = doc(db, 'users', id);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
       
-      if (docSnap.exists()) {
-        const user = convertFirestoreToUser(docSnap);
+      if (error) throw error;
+      
+      if (data) {
+        const user = {
+          id: data.id,
+          username: data.username,
+          email: data.email,
+          role: data.role,
+          lastLogin: data.last_login
+        };
         console.log('👤 Usuario encontrado:', user.username);
         set({ selectedUser: user, loading: false });
       } else {
@@ -111,34 +96,42 @@ export const useUserStore = create<UserState>()((set, get) => ({
         set({ selectedUser: null, loading: false });
       }
     } catch (error) {
-      console.error('❌ Error buscando usuario en Firebase:', error);
+      console.error('❌ Error buscando usuario en Supabase:', error);
       set({ error: 'Error al cargar los detalles del usuario', loading: false });
     }
   },
   
   createUser: async (userData: Partial<User> & { password: string }) => {
-    console.log('➕ Creando nuevo usuario en Firebase...');
+    console.log('➕ Creando nuevo usuario en Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const newUser: Omit<User, 'id'> = {
+      const newUser = {
         username: userData.username!,
         email: userData.email!,
         role: userData.role || 'admin',
-        lastLogin: new Date().toISOString()
+        last_login: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: true
       };
       
-      // Guardar en Firebase
-      const usersRef = collection(db, 'users');
-      const firestoreData = convertUserToFirestore(newUser);
-      const docRef = await addDoc(usersRef, firestoreData);
+      const { data, error } = await supabase
+        .from('users')
+        .insert([newUser])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       const createdUser: User = {
-        ...newUser,
-        id: docRef.id
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        role: data.role,
+        lastLogin: data.last_login
       };
       
-      console.log('✅ Usuario creado en Firebase:', createdUser.username);
+      console.log('✅ Usuario creado en Supabase:', createdUser.username);
       
       // Actualizar estado local
       set(state => ({ 
@@ -148,23 +141,32 @@ export const useUserStore = create<UserState>()((set, get) => ({
       
       return createdUser;
     } catch (error) {
-      console.error('❌ Error creando usuario en Firebase:', error);
+      console.error('❌ Error creando usuario en Supabase:', error);
       set({ error: 'Error al crear el usuario', loading: false });
       throw error;
     }
   },
   
   updateUser: async (id: string, userData: Partial<User>) => {
-    console.log('🔄 Actualizando usuario en Firebase:', id);
+    console.log('🔄 Actualizando usuario en Supabase:', id);
     set({ loading: true, error: null });
     
     try {
-      // Actualizar en Firebase
-      const docRef = doc(db, 'users', id);
-      const firestoreData = convertUserToFirestore(userData);
-      await updateDoc(docRef, firestoreData);
+      const updateData = {
+        username: userData.username,
+        email: userData.email,
+        role: userData.role,
+        last_login: userData.lastLogin
+      };
       
-      console.log('✅ Usuario actualizado en Firebase');
+      const { error } = await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      console.log('✅ Usuario actualizado en Supabase');
       
       // Actualizar estado local
       set(state => ({
@@ -175,22 +177,25 @@ export const useUserStore = create<UserState>()((set, get) => ({
         loading: false
       }));
     } catch (error) {
-      console.error('❌ Error actualizando usuario en Firebase:', error);
+      console.error('❌ Error actualizando usuario en Supabase:', error);
       set({ error: 'Error al actualizar el usuario', loading: false });
       throw error;
     }
   },
   
   deleteUser: async (id: string) => {
-    console.log('🗑️ Eliminando usuario de Firebase:', id);
+    console.log('🗑️ Eliminando usuario de Supabase:', id);
     set({ loading: true, error: null });
     
     try {
-      // Eliminar de Firebase
-      const docRef = doc(db, 'users', id);
-      await deleteDoc(docRef);
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', id);
       
-      console.log('✅ Usuario eliminado de Firebase');
+      if (error) throw error;
+      
+      console.log('✅ Usuario eliminado de Supabase');
       
       // Actualizar estado local
       set(state => {
@@ -204,51 +209,70 @@ export const useUserStore = create<UserState>()((set, get) => ({
         };
       });
     } catch (error) {
-      console.error('❌ Error eliminando usuario de Firebase:', error);
+      console.error('❌ Error eliminando usuario de Supabase:', error);
       set({ error: 'Error al eliminar el usuario', loading: false });
       throw error;
     }
   },
 
   initializeDefaultUser: async () => {
-    console.log('🔧 Inicializando usuario por defecto en Firebase...');
+    console.log('🔧 Inicializando usuario por defecto en Supabase...');
     set({ loading: true, error: null });
     
     try {
       // Primero verificar si el usuario ya existe
-      const docRef = doc(db, 'users', 'admin-demian');
-      const docSnap = await getDoc(docRef);
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', 'demian')
+        .single();
       
-      if (docSnap.exists()) {
+      if (existingUser) {
         // El usuario ya existe, simplemente cargarlo
-        const existingUser = convertFirestoreToUser(docSnap);
-        console.log('✅ Usuario por defecto ya existe en Firebase, cargando...');
-        set({ users: [existingUser] });
+        const user = {
+          id: existingUser.id,
+          username: existingUser.username,
+          email: existingUser.email,
+          role: existingUser.role,
+          lastLogin: existingUser.last_login
+        };
+        console.log('✅ Usuario por defecto ya existe en Supabase, cargando...');
+        set({ users: [user], loading: false });
         return;
       }
       
       // El usuario no existe, crearlo
-      const defaultUser: Omit<User, 'id'> = {
+      const defaultUser = {
+        id: 'admin-demian',
         username: 'demian',
         email: 'demian.83@hotmail.es',
         role: 'superadmin',
-        lastLogin: new Date().toISOString()
+        last_login: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        is_active: true
       };
       
-      // Crear en Firebase con ID específico (solo si no existe)
-      const firestoreData = convertUserToFirestore(defaultUser);
-      await setDoc(docRef, firestoreData);
+      const { data, error } = await supabase
+        .from('users')
+        .insert([defaultUser])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       const createdUser: User = {
-        ...defaultUser,
-        id: 'admin-demian'
+        id: data.id,
+        username: data.username,
+        email: data.email,
+        role: data.role,
+        lastLogin: data.last_login
       };
       
-      console.log('✅ Usuario por defecto creado en Firebase');
+      console.log('✅ Usuario por defecto creado en Supabase');
       
       set({ users: [createdUser], loading: false });
     } catch (error) {
-      console.error('❌ Error inicializando usuario por defecto en Firebase:', error);
+      console.error('❌ Error inicializando usuario por defecto en Supabase:', error);
       
       // Como fallback, usar datos locales temporalmente
       const defaultUser: User = {

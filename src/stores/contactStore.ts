@@ -1,15 +1,5 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  updateDoc, 
-  query, 
-  orderBy, 
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 
 export interface ContactMessage {
   id: string;
@@ -21,28 +11,6 @@ export interface ContactMessage {
   createdAt: string;
   archived: boolean;
 }
-
-// Convertir documento de Firestore a ContactMessage
-const convertFirestoreToMessage = (doc: any): ContactMessage => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    createdAt: data.createdAt?.toDate?.()?.toISOString() || data.createdAt,
-  };
-};
-
-// Convertir ContactMessage a formato Firestore
-const convertMessageToFirestore = (message: Partial<ContactMessage>) => {
-  const data = { ...message };
-  
-  if (data.createdAt) {
-    data.createdAt = Timestamp.fromDate(new Date(data.createdAt));
-  }
-  
-  delete data.id;
-  return data;
-};
 
 interface ContactState {
   messages: ContactMessage[];
@@ -63,67 +31,94 @@ export const useContactStore = create<ContactState>()((set, get) => ({
   error: null,
   
   fetchMessages: async () => {
-    console.log('📨 Cargando mensajes de contacto desde Firebase...');
+    console.log('📨 Cargando mensajes de contacto desde Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const messagesRef = collection(db, 'contactMessages');
-      const q = query(messagesRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .select('*')
+        .order('created_at', { ascending: false });
       
-      const messages = querySnapshot.docs.map(convertFirestoreToMessage);
+      if (error) throw error;
       
-      console.log('✅ Mensajes cargados desde Firebase:', messages.length);
+      const messages = data.map(row => ({
+        id: row.id,
+        name: row.name,
+        whatsapp: row.whatsapp,
+        email: row.email,
+        message: row.message,
+        status: row.status,
+        createdAt: row.created_at,
+        archived: row.archived
+      }));
+      
+      console.log('✅ Mensajes cargados desde Supabase:', messages.length);
       set({ messages, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando mensajes desde Firebase:', error);
+      console.error('❌ Error cargando mensajes desde Supabase:', error);
       set({ error: 'Error al cargar los mensajes', loading: false });
     }
   },
   
   sendContactMessage: async (messageData) => {
-    console.log('📤 Enviando mensaje de contacto a Firebase...');
+    console.log('📤 Enviando mensaje de contacto a Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const newMessage: Omit<ContactMessage, 'id'> = {
-        ...messageData,
-        status: 'nuevo',
-        createdAt: new Date().toISOString(),
+      const newMessage = {
+        name: messageData.name,
+        whatsapp: messageData.whatsapp,
+        email: messageData.email,
+        message: messageData.message,
+        status: 'nuevo' as const,
+        created_at: new Date().toISOString(),
         archived: false
       };
       
-      // Guardar en Firebase
-      const messagesRef = collection(db, 'contactMessages');
-      const firestoreData = convertMessageToFirestore(newMessage);
-      const docRef = await addDoc(messagesRef, firestoreData);
+      const { data, error } = await supabase
+        .from('contact_messages')
+        .insert([newMessage])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       const messageWithId: ContactMessage = {
-        ...newMessage,
-        id: docRef.id
+        id: data.id,
+        name: data.name,
+        whatsapp: data.whatsapp,
+        email: data.email,
+        message: data.message,
+        status: data.status,
+        createdAt: data.created_at,
+        archived: data.archived
       };
       
-      console.log('✅ Mensaje enviado a Firebase correctamente');
+      console.log('✅ Mensaje enviado a Supabase correctamente');
       
       set(state => ({
         messages: [messageWithId, ...state.messages],
         loading: false
       }));
     } catch (error) {
-      console.error('❌ Error enviando mensaje a Firebase:', error);
+      console.error('❌ Error enviando mensaje a Supabase:', error);
       set({ error: 'Error al enviar el mensaje', loading: false });
       throw error;
     }
   },
   
   updateMessageStatus: async (id, status) => {
-    console.log('🔄 Actualizando estado del mensaje en Firebase:', id, 'a', status);
+    console.log('🔄 Actualizando estado del mensaje en Supabase:', id, 'a', status);
     set({ loading: true, error: null });
     
     try {
-      // Actualizar en Firebase
-      const docRef = doc(db, 'contactMessages', id);
-      await updateDoc(docRef, { status });
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ status })
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Actualizar estado local
       set(state => ({
@@ -133,22 +128,25 @@ export const useContactStore = create<ContactState>()((set, get) => ({
         loading: false
       }));
       
-      console.log('✅ Estado actualizado en Firebase correctamente');
+      console.log('✅ Estado actualizado en Supabase correctamente');
     } catch (error) {
-      console.error('❌ Error actualizando estado en Firebase:', error);
+      console.error('❌ Error actualizando estado en Supabase:', error);
       set({ error: 'Error al actualizar el estado', loading: false });
       throw error;
     }
   },
   
   archiveMessage: async (id) => {
-    console.log('📁 Archivando mensaje en Firebase:', id);
+    console.log('📁 Archivando mensaje en Supabase:', id);
     set({ loading: true, error: null });
     
     try {
-      // Actualizar en Firebase
-      const docRef = doc(db, 'contactMessages', id);
-      await updateDoc(docRef, { archived: true });
+      const { error } = await supabase
+        .from('contact_messages')
+        .update({ archived: true })
+        .eq('id', id);
+      
+      if (error) throw error;
       
       // Actualizar estado local
       set(state => ({
@@ -158,9 +156,9 @@ export const useContactStore = create<ContactState>()((set, get) => ({
         loading: false
       }));
       
-      console.log('✅ Mensaje archivado en Firebase correctamente');
+      console.log('✅ Mensaje archivado en Supabase correctamente');
     } catch (error) {
-      console.error('❌ Error archivando mensaje en Firebase:', error);
+      console.error('❌ Error archivando mensaje en Supabase:', error);
       set({ error: 'Error al archivar el mensaje', loading: false });
       throw error;
     }

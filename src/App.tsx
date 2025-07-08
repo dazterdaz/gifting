@@ -21,7 +21,6 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
 import { initializeUser } from './lib/auth';
-import { initializeFirebaseCollections } from './lib/firebaseInit';
 import toast from 'react-hot-toast';
 
 function App() {
@@ -34,7 +33,7 @@ function App() {
   useEffect(() => {
     const initialize = async () => {
       try {
-        console.log('🚀 Inicializando aplicación...');
+        console.log('🚀 Inicializando aplicación con Supabase...');
         
         // Inicializar datos de la aplicación con timeout
         await Promise.race([
@@ -43,19 +42,14 @@ function App() {
             fetchSettings(),
             fetchUsers()
           ]),
-          new Promise(resolve => setTimeout(resolve, 3000)) // Timeout de 3 segundos
+          new Promise(resolve => setTimeout(resolve, 5000)) // Timeout de 5 segundos
         ]);
-        
-        // Inicializar Firebase en background (no bloquear)
-        initializeFirebaseCollections().catch(error => {
-          console.warn('⚠️ Error en inicialización de Firebase:', error);
-        });
         
         console.log('✅ Aplicación inicializada correctamente');
         
       } catch (error) {
         console.error('❌ Error inicializando aplicación:', error);
-        // No mostrar error crítico al usuario
+        // No mostrar error crítico al usuario, la app puede funcionar sin conexión inicial
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +69,7 @@ function App() {
         <div className="text-center">
           <div className="animate-spin w-16 h-16 border-b-2 border-primary-600 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600 dark:text-gray-400">
-            Inicializando sistema...
+            Inicializando sistema con Supabase...
           </p>
         </div>
       </div>

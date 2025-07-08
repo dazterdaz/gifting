@@ -1,39 +1,6 @@
 import { create } from 'zustand';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  limit as firestoreLimit,
-  Timestamp 
-} from '../lib/firebase';
-import { db } from '../lib/firebase';
+import { supabase } from '../lib/supabase';
 import { ActivityLog } from '../types';
-
-// Convertir documento de Firestore a ActivityLog
-const convertFirestoreToActivity = (doc: any): ActivityLog => {
-  const data = doc.data();
-  return {
-    id: doc.id,
-    ...data,
-    timestamp: data.timestamp?.toDate?.()?.toISOString() || data.timestamp,
-  };
-};
-
-// Convertir ActivityLog a formato Firestore
-const convertActivityToFirestore = (activity: Partial<ActivityLog>) => {
-  const data = { ...activity };
-  
-  if (data.timestamp) {
-    data.timestamp = Timestamp.fromDate(new Date(data.timestamp));
-  }
-  
-  delete data.id;
-  return data;
-};
 
 interface ActivityState {
   activities: ActivityLog[];
@@ -64,40 +31,61 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
   error: null,
   
   fetchActivities: async () => {
-    console.log('📊 Cargando actividades desde Firebase...');
+    console.log('📊 Cargando actividades desde Supabase...');
     set({ loading: true, error: null });
     
     try {
-      const activitiesRef = collection(db, 'activities');
-      const q = query(activitiesRef, orderBy('timestamp', 'desc'));
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('timestamp', { ascending: false });
       
-      const activities = querySnapshot.docs.map(convertFirestoreToActivity);
+      if (error) throw error;
       
-      console.log('✅ Actividades cargadas desde Firebase:', activities.length);
+      const activities = data.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        username: row.username,
+        action: row.action,
+        targetType: row.target_type,
+        targetId: row.target_id,
+        details: row.details,
+        timestamp: row.timestamp
+      }));
+      
+      console.log('✅ Actividades cargadas desde Supabase:', activities.length);
       
       set({ activities, loading: false });
     } catch (error) {
-      console.error('❌ Error cargando actividades desde Firebase:', error);
+      console.error('❌ Error cargando actividades desde Supabase:', error);
       set({ error: 'Error al cargar las actividades', loading: false });
     }
   },
   
   fetchRecentActivities: async (limitCount = 5) => {
-    console.log('📊 Cargando actividades recientes desde Firebase...');
+    console.log('📊 Cargando actividades recientes desde Supabase...');
     
     try {
-      const activitiesRef = collection(db, 'activities');
-      const q = query(
-        activitiesRef, 
-        orderBy('timestamp', 'desc'), 
-        firestoreLimit(limitCount)
-      );
-      const querySnapshot = await getDocs(q);
+      const { data, error } = await supabase
+        .from('activities')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(limitCount);
       
-      const recentActivities = querySnapshot.docs.map(convertFirestoreToActivity);
+      if (error) throw error;
       
-      console.log('✅ Actividades recientes cargadas desde Firebase:', recentActivities.length);
+      const recentActivities = data.map(row => ({
+        id: row.id,
+        userId: row.user_id,
+        username: row.username,
+        action: row.action,
+        targetType: row.target_type,
+        targetId: row.target_id,
+        details: row.details,
+        timestamp: row.timestamp
+      }));
+      
+      console.log('✅ Actividades recientes cargadas desde Supabase:', recentActivities.length);
       
       set({ 
         recentActivities, 
@@ -105,37 +93,51 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
         error: null
       });
     } catch (error) {
-      console.error('❌ Error cargando actividades recientes desde Firebase:', error);
+      console.error('❌ Error cargando actividades recientes desde Supabase:', error);
       
       // No fallar completamente, usar array vacío como fallback
       set({ 
         recentActivities: [],
         loading: false,
-        error: null // No mostrar error al usuario
+        error: null
       });
     }
   },
   
   logActivity: async (activity: Omit<ActivityLog, 'id' | 'timestamp'>) => {
-    console.log('📝 Registrando actividad en Firebase:', activity.action);
+    console.log('📝 Registrando actividad en Supabase:', activity.action);
     
     try {
-      const newActivity: Omit<ActivityLog, 'id'> = {
-        ...activity,
+      const newActivity = {
+        user_id: activity.userId,
+        username: activity.username,
+        action: activity.action,
+        target_type: activity.targetType,
+        target_id: activity.targetId,
+        details: activity.details,
         timestamp: new Date().toISOString()
       };
       
-      // Guardar en Firebase
-      const activitiesRef = collection(db, 'activities');
-      const firestoreData = convertActivityToFirestore(newActivity);
-      const docRef = await addDoc(activitiesRef, firestoreData);
+      const { data, error } = await supabase
+        .from('activities')
+        .insert([newActivity])
+        .select()
+        .single();
+      
+      if (error) throw error;
       
       const activityWithId: ActivityLog = {
-        ...newActivity,
-        id: docRef.id
+        id: data.id,
+        userId: data.user_id,
+        username: data.username,
+        action: data.action,
+        targetType: data.target_type,
+        targetId: data.target_id,
+        details: data.details,
+        timestamp: data.timestamp
       };
       
-      console.log('✅ Actividad registrada en Firebase:', activityWithId.details);
+      console.log('✅ Actividad registrada en Supabase:', activityWithId.details);
       
       // Actualizar estado local
       set(state => ({
@@ -143,7 +145,7 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
         recentActivities: [activityWithId, ...state.recentActivities].slice(0, 5)
       }));
     } catch (error) {
-      console.error('❌ Error registrando actividad en Firebase:', error);
+      console.error('❌ Error registrando actividad en Supabase:', error);
     }
   },
   
@@ -169,6 +171,5 @@ export const useActivityStore = create<ActivityState>()((set, get) => ({
   
   clearTodayActivities: () => {
     console.log('🧹 Limpiando actividades del día');
-    // Esta función mantiene las actividades para persistencia en Firebase
   }
 }));
