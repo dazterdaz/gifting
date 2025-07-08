@@ -193,8 +193,8 @@ const initializeAuthUser = async () => {
         
         // Verificar que el documento de Firestore también existe
         try {
-          await signInWithEmailAndPassword(auth, email, password);
-          const currentUser = auth.currentUser;
+          const signInResult = await signInWithEmailAndPassword(auth, email, password);
+          const currentUser = signInResult.user;
           
           if (currentUser) {
             const userRef = doc(db, 'users', currentUser.uid);
@@ -211,14 +211,26 @@ const initializeAuthUser = async () => {
                 isActive: true
               });
               console.log('✅ Documento de usuario creado en Firestore');
+            } else {
+              console.log('ℹ️ Documento de usuario ya existe en Firestore');
             }
+            
+            // Cerrar sesión después de verificar/crear
+            await auth.signOut();
+            console.log('👋 Sesión cerrada después de inicialización');
           }
         } catch (signInError) {
-          console.warn('⚠️ Error verificando usuario existente:', signInError);
+          if (signInError.code === 'auth/wrong-password') {
+            console.error('❌ Contraseña incorrecta para usuario existente');
+            console.log('🔧 Puede que necesites resetear la contraseña en Firebase Console');
+          } else {
+            console.warn('⚠️ Error verificando usuario existente:', signInError);
+          }
         }
       } else {
         console.error('❌ Error creando usuario de autenticación:', createError);
-        throw createError;
+        // No fallar la inicialización por esto
+        console.log('🔄 Continuando sin crear usuario de autenticación...');
       }
     }
     

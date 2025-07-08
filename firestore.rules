@@ -6,12 +6,6 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Función para verificar si el usuario es superadmin
-    function isSuperAdmin() {
-      return isAuthenticated() && 
-             request.auth.uid == 'demian-admin-uid';
-    }
-    
     // Función para verificar si el usuario es admin o superadmin
     function isAdmin() {
       return isAuthenticated();
@@ -20,6 +14,8 @@ service cloud.firestore {
     // Colección de usuarios - solo usuarios autenticados pueden leer/escribir
     match /users/{userId} {
       allow read, write: if isAuthenticated();
+      // Permitir que un usuario cree su propio documento
+      allow create: if request.auth != null && request.auth.uid == userId;
     }
 
     // Colección de giftcards - solo usuarios autenticados pueden leer/escribir

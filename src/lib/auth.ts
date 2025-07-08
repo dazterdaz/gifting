@@ -26,12 +26,14 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
     }
     
     console.log('🔍 Intentando autenticar con email:', email);
+    console.log('🔑 Usando contraseña:', password ? '***' : 'NO PASSWORD');
     
     // Autenticar con Firebase Auth
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const firebaseUser = userCredential.user;
     
     console.log('✅ Autenticación exitosa con Firebase Auth');
+    console.log('👤 UID de Firebase:', firebaseUser.uid);
     
     // Obtener datos adicionales del usuario desde Firestore
     try {
@@ -52,6 +54,8 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
         console.log('✅ Datos de usuario obtenidos de Firestore');
       } else {
         // Si no existe el documento, crear uno por defecto
+        console.log('⚠️ Usuario no encontrado en Firestore, creando documento...');
+        
         userData = {
           id: firebaseUser.uid,
           username: 'demian',
@@ -59,7 +63,21 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
           role: 'superadmin',
           lastLogin: new Date().toISOString()
         };
-        console.log('⚠️ Usuario no encontrado en Firestore, usando datos por defecto');
+        
+        // Intentar crear el documento en Firestore
+        try {
+          await setDoc(userDocRef, {
+            username: userData.username,
+            email: userData.email,
+            role: userData.role,
+            createdAt: Timestamp.fromDate(new Date()),
+            lastLogin: Timestamp.fromDate(new Date()),
+            isActive: true
+          });
+          console.log('✅ Documento de usuario creado en Firestore');
+        } catch (createDocError) {
+          console.warn('⚠️ No se pudo crear documento en Firestore:', createDocError);
+        }
       }
       
       // Obtener token de Firebase
@@ -90,9 +108,16 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
     
   } catch (error) {
     console.error('❌ Error en autenticación:', error);
+    console.error('❌ Código de error:', error.code);
+    console.error('❌ Mensaje de error:', error.message);
     
     // Si es error de credenciales inválidas
-    if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+    if (
+      error.code === 'auth/invalid-credential' || 
+      error.code === 'auth/user-not-found' || 
+      error.code === 'auth/wrong-password' ||
+      error.code === 'auth/invalid-email'
+    ) {
       console.log('❌ Credenciales incorrectas');
       return null;
     }
