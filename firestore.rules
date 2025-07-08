@@ -24,6 +24,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated();
       allow write: if isSuperAdmin();
+      // Permitir creación del usuario administrador por defecto durante la inicialización
+      allow read, create: if userId == 'admin-demian';
     }
 
     // Colección de giftcards - admin y superadmin pueden leer/escribir
