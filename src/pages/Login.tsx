@@ -19,7 +19,7 @@ interface LoginFormValues {
 
 const Login = () => {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { theme, toggleTheme } = useTheme();
   const { login: loginStore } = useAuthStore();
   const { logActivity } = useActivityStore();

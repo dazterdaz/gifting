@@ -4,7 +4,6 @@ import SiteSettings from '../components/settings/SiteSettings';
 import TermsEditor from '../components/settings/TermsEditor';
 
 const Settings = () => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
 
   if (user?.role !== 'superadmin') {

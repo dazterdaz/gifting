@@ -6,7 +6,6 @@ import { useAuthStore } from '../stores/authStore';
 import { formatDate } from '../lib/utils';
 
 const UserManagement = () => {
-  const { t } = useTranslation();
   const { users, fetchUsers, loading } = useUserStore();
   const { user: currentUser } = useAuthStore();
   

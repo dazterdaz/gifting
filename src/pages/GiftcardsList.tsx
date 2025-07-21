@@ -16,7 +16,6 @@ const GiftcardsList = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { 
-    giftcards, 
     filteredGiftcards, 
     loading, 
     fetchGiftcards, 

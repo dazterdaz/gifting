@@ -31,28 +31,6 @@ const convertSupabaseToGiftcard = (row: any): Giftcard => {
   };
 };
 
-// Convertir Giftcard a formato Supabase
-const convertGiftcardToSupabase = (giftcard: Partial<Giftcard>) => {
-  return {
-    number: giftcard.number,
-    buyer_name: giftcard.buyer?.name,
-    buyer_email: giftcard.buyer?.email,
-    buyer_phone: giftcard.buyer?.phone,
-    recipient_name: giftcard.recipient?.name,
-    recipient_email: giftcard.recipient?.email,
-    recipient_phone: giftcard.recipient?.phone,
-    amount: giftcard.amount,
-    status: giftcard.status,
-    created_at: giftcard.createdAt,
-    delivered_at: giftcard.deliveredAt,
-    expires_at: giftcard.expiresAt,
-    redeemed_at: giftcard.redeemedAt,
-    cancelled_at: giftcard.cancelledAt,
-    notes: giftcard.notes,
-    artist: giftcard.artist,
-    terms_accepted_at: giftcard.termsAcceptedAt
-  };
-};
 
 interface GiftcardState {
   giftcards: Giftcard[];

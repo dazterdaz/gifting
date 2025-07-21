@@ -26,7 +26,6 @@ interface SocialLink {
 }
 
 const SiteConfiguration = () => {
-  const { t } = useTranslation();
   const { settings, updateSettings } = useSettingsStore();
   const { user } = useAuthStore();
   const { logActivity } = useActivityStore();
