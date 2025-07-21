@@ -144,7 +144,7 @@ const SiteSettings = () => {
                 onChange={handleFileChange}
               />
               <span className="text-sm text-gray-500">
-                Formatos soportados: JPG, PNG, GIF, SVG. Máximo 5MB.
+                Formatos soportados: JPG, PNG, GIF, SVG. Máximo 2MB.
               </span>
             </div>
           </div>
