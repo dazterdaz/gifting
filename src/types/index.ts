@@ -90,6 +90,7 @@ export interface SiteSettings {
   siteName: string;
   logoUrl: string;
   logoColor: string;
+  brandingDisplay: 'logo' | 'text' | 'both';
   terms?: TermsAndConditions;
   contactInfo?: ContactInfo;
   testimonials?: Testimonial[];

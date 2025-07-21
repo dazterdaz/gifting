@@ -147,17 +147,21 @@ const LandingPage = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
-              <img 
-                src={settings.logoUrl} 
-                alt="Logo" 
-                className="h-10 w-10"
-                onError={(e) => {
-                  e.currentTarget.src = '/logo.svg';
-                }}
-              />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                {settings.siteName}
-              </h1>
+              {(settings.brandingDisplay === 'logo' || settings.brandingDisplay === 'both') && (
+                <img 
+                  src={settings.logoUrl} 
+                  alt="Logo" 
+                  className="h-10 w-10"
+                  onError={(e) => {
+                    e.currentTarget.src = '/logo.svg';
+                  }}
+                />
+              )}
+              {(settings.brandingDisplay === 'text' || settings.brandingDisplay === 'both') && (
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  {settings.siteName}
+                </h1>
+              )}
             </div>
             
             <nav className="hidden md:flex items-center space-x-6">
@@ -441,15 +445,19 @@ const LandingPage = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-4">
             <div className="flex items-center space-x-3 mb-4 md:mb-0">
-              <img 
-                src={settings.logoUrl} 
-                alt="Logo" 
-                className="h-8 w-8"
-                onError={(e) => {
-                  e.currentTarget.src = '/logo.svg';
-                }}
-              />
-              <span className="text-xl font-bold text-white">{settings.siteName}</span>
+              {(settings.brandingDisplay === 'logo' || settings.brandingDisplay === 'both') && (
+                <img 
+                  src={settings.logoUrl} 
+                  alt="Logo" 
+                  className="h-8 w-8"
+                  onError={(e) => {
+                    e.currentTarget.src = '/logo.svg';
+                  }}
+                />
+              )}
+              {(settings.brandingDisplay === 'text' || settings.brandingDisplay === 'both') && (
+                <span className="text-xl font-bold text-white">{settings.siteName}</span>
+              )}
             </div>
             
             <div className="text-center md:text-right">

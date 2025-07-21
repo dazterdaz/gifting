@@ -14,6 +14,7 @@ interface SettingsFormData {
   siteName: string;
   logoUrl: string;
   logoColor: string;
+  brandingDisplay: 'logo' | 'text' | 'both';
 }
 
 const SiteSettings = () => {
@@ -28,7 +29,8 @@ const SiteSettings = () => {
     defaultValues: {
       siteName: settings.siteName,
       logoUrl: settings.logoUrl,
-      logoColor: settings.logoColor
+      logoColor: settings.logoColor,
+      brandingDisplay: settings.brandingDisplay
     }
   });
 
@@ -150,19 +152,38 @@ const SiteSettings = () => {
             error={errors.logoColor?.message}
           />
           
+          <Select
+            label="Mostrar en Landing Page"
+            options={[
+              { value: 'logo', label: 'Solo Logo' },
+              { value: 'text', label: 'Solo Texto' },
+              { value: 'both', label: 'Logo + Texto' }
+            ]}
+            {...register('brandingDisplay')}
+          />
+          
           <div className="mt-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
               Vista previa:
             </p>
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <img
-                src={watch('logoUrl') || settings.logoUrl}
-                alt="Logo preview"
-                className="h-12 w-auto"
-                onError={(e) => {
-                  e.currentTarget.src = '/logo.svg';
-                }}
-              />
+              <div className="flex items-center space-x-3">
+                {(watch('brandingDisplay') === 'logo' || watch('brandingDisplay') === 'both') && (
+                  <img
+                    src={watch('logoUrl') || settings.logoUrl}
+                    alt="Logo preview"
+                    className="h-12 w-auto"
+                    onError={(e) => {
+                      e.currentTarget.src = '/logo.svg';
+                    }}
+                  />
+                )}
+                {(watch('brandingDisplay') === 'text' || watch('brandingDisplay') === 'both') && (
+                  <span className="text-xl font-bold" style={{ color: watch('logoColor') }}>
+                    {watch('siteName') || settings.siteName}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>
