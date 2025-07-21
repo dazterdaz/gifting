@@ -50,7 +50,7 @@ const LandingPage = () => {
       title: "Regala Arte que Perdura",
       subtitle: "El regalo perfecto para expresarse",
       description: "Regala una experiencia única de arte corporal con nuestras tarjetas de regalo",
-      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      image: "https://images.pexels.com/photos/4123707/pexels-photo-4123707.jpeg?_gl=1*osv1qc*_ga*MTcwODYwMjcwMC4xNzUzMDc5MTQx*_ga_8JE65Q40S6*czE3NTMwNzkxNDAkbzEkZzEkdDE3NTMwNzkxODgkajEyJGwwJGgw",
       color: "from-purple-600 to-pink-600"
     },
     {
