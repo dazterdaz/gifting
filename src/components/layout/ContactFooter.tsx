@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Phone, Mail, MessageSquare } from 'lucide-react';
+import { X, Phone, Mail, MessageSquare, MapPin } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
 
 const ContactFooter = () => {
@@ -27,7 +27,7 @@ const ContactFooter = () => {
         </p>
       </footer>
 
-      {/* Popup de contacto */}
+      {/* Popup de información de contacto */}
       {showContactInfo && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
@@ -78,18 +78,6 @@ const ContactFooter = () => {
                   </div>
                 </a>
 
-                {contactInfo.address && (
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
-                    <div className="bg-gray-500 rounded-full p-2">
-                      <MessageSquare className="h-4 w-4 text-white" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">Dirección</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{contactInfo.address}</p>
-                    </div>
-                  </div>
-                )}
-
                 <a
                   href={`mailto:${contactInfo.email}`}
                   className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
@@ -102,6 +90,18 @@ const ContactFooter = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-300">{contactInfo.email}</p>
                   </div>
                 </a>
+
+                {contactInfo.address && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
+                    <div className="bg-gray-500 rounded-full p-2">
+                      <MapPin className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Dirección</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{contactInfo.address}</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 mt-6">
