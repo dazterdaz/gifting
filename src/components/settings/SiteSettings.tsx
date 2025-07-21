@@ -24,7 +24,7 @@ const SiteSettings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<SettingsFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<SettingsFormData>({
     defaultValues: {
       siteName: settings.siteName,
       logoUrl: settings.logoUrl,
@@ -38,6 +38,7 @@ const SiteSettings = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsSubmitting(true);
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
       if (!allowedTypes.includes(file.type)) {
@@ -48,12 +49,32 @@ const SiteSettings = () => {
         throw new Error('El archivo es demasiado grande. Máximo 2MB.');
       }
 
-      const logoUrl = await uploadLogo(file);
-      updateSettings({ logoUrl });
-      toast.success('Logo subido correctamente');
+      // Convertir archivo a base64 para almacenamiento local
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const logoUrl = event.target?.result as string;
+        
+        // Actualizar configuración con el nuevo logo
+        await updateSettings({ logoUrl });
+        
+        // Actualizar el formulario
+        setValue('logoUrl', logoUrl);
+        
+        toast.success('Logo actualizado correctamente');
+        setIsSubmitting(false);
+      };
+      
+      reader.onerror = () => {
+        toast.error('Error al procesar la imagen');
+        setIsSubmitting(false);
+      };
+      
+      reader.readAsDataURL(file);
+      
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al subir el logo');
+      setIsSubmitting(false);
     }
   };
 
@@ -135,13 +156,11 @@ const SiteSettings = () => {
             </p>
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
               <img
-                src={settings.logoUrl}
+                src={watch('logoUrl') || settings.logoUrl}
                 alt="Logo preview"
                 className="h-12 w-auto"
-                style={{ filter: `brightness(0) saturate(100%) ${settings.logoUrl === '/logo.svg' ? `invert(42%) sepia(93%) saturate(1352%) hue-rotate(227deg) brightness(90%) contrast(119%)` : ''}` }}
                 onError={(e) => {
                   e.currentTarget.src = '/logo.svg';
-                  toast.error('Error al cargar el logo');
                 }}
               />
             </div>

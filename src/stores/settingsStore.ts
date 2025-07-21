@@ -196,7 +196,7 @@ export const useSettingsStore = create<SettingsState>()((set, get) => ({
     set({ error: null });
     
     try {
-      // Simular subida de archivo convirtiendo a base64
+      // Convertir archivo a base64 para almacenamiento
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
