@@ -58,7 +58,7 @@ const LandingPage = () => {
       title: "Experiencia Profesional",
       subtitle: "Arte corporal de calidad superior",
       description: "Nuestros artistas especializados crearán la obra perfecta para ti",
-      image: "https://images.pexels.com/photos/1319460/pexels-photo-1319460.jpeg?auto=compress&cs=tinysrgb&w=1200",
+      image: "https://images.pexels.com/photos/428105/pexels-photo-428105.jpeg?_gl=1*gug91h*_ga*MTcwODYwMjcwMC4xNzUzMDc5MTQx*_ga_8JE65Q40S6*czE3NTMwNzkxNDAkbzEkZzEkdDE3NTMwNzkzNTIkajQ0JGwwJGgw",
       color: "from-blue-600 to-purple-600"
     },
     {
