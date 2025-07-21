@@ -47,7 +47,7 @@ const ActivityFilters: React.FC<ActivityFiltersProps> = ({ onFilter, onClear }) 
         <Select
           options={userOptions}
           value={userId}
-          onChange={setUserId}
+          onValueChange={setUserId}
           leftAdornment={<User className="h-5 w-5 text-gray-400" />}
         />
       </div>

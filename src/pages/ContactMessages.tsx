@@ -310,7 +310,7 @@ const ContactMessages = () => {
               <Select
                 options={statusOptions}
                 value={statusFilter}
-                onChange={setStatusFilter}
+                onValueChange={setStatusFilter}
                 leftAdornment={<Filter className="h-5 w-5 text-gray-400" />}
               />
               
@@ -482,7 +482,7 @@ const ContactMessages = () => {
                         <Select
                           options={statusChangeOptions}
                           value={message.status}
-                          onChange={(value) => handleStatusChange(message.id, value as ContactMessage['status'])}
+                          onValueChange={(value) => handleStatusChange(message.id, value as ContactMessage['status'])}
                         />
                       </div>
                       
