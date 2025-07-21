@@ -135,7 +135,7 @@ const GiftcardStatusChange: React.FC<GiftcardStatusChangeProps> = ({ giftcard, o
             label={t('common.status')}
             options={getAvailableStatuses()}
             value={status}
-            onValueChange={setStatus}
+            onValueChange={(value) => setStatus(value as GiftcardStatus)}
           />
           
           {status === 'redeemed' && (

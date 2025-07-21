@@ -30,8 +30,6 @@ const GiftcardCreateForm: React.FC = () => {
   const navigate = useNavigate();
   const { createGiftcard } = useGiftcardStore();
   const { logActivity } = useActivityStore();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const { register, handleSubmit, formState: { errors } } = useForm<GiftcardFormValues>({
     defaultValues: {
       customNumber: '',
@@ -107,7 +105,7 @@ const GiftcardCreateForm: React.FC = () => {
     } catch (error) {
       console.error('❌ Error en el formulario:', error);
       
-      const errorMessage = error.message || 'Error al crear la tarjeta de regalo';
+      const errorMessage = (error as Error).message || 'Error al crear la tarjeta de regalo';
       
       toast.error(errorMessage, {
         duration: 3000,

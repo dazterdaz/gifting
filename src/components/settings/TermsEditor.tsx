@@ -33,7 +33,6 @@ const formats = [
 ];
 
 const TermsEditor = () => {
-  const { t } = useTranslation();
   const { settings, updateSettings } = useSettingsStore();
   const { logActivity } = useActivityStore();
   const { user } = useAuthStore();

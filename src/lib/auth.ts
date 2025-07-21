@@ -79,7 +79,7 @@ export const initializeUser = async (): Promise<void> => {
   }
 };
 
-export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
+export const changePassword = async (_userId: string, _currentPassword: string, _newPassword: string): Promise<boolean> => {
   // En una aplicación real, esto sería una llamada a la API para actualizar la contraseña
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;

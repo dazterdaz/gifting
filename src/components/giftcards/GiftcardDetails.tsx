@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Clock, Edit, Printer, Gift, RefreshCw, Trash } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import Button from '../ui/Button';
 import StatusBadge from '../ui/StatusBadge';
 import ActivityList from './ActivityList';
@@ -22,7 +22,7 @@ const GiftcardDetails = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { selectedGiftcard, getGiftcardById, loading, deleteGiftcard } = useGiftcardStore();
-  const { activities, getActivitiesByTarget } = useActivityStore();
+  const { activities, getActivitiesByTarget, logActivity } = useActivityStore();
   const [giftcardActivities, setGiftcardActivities] = useState<any[]>([]);
   const [activePanel, setActivePanel] = useState<ActivePanel>('details');
   const [isDeleting, setIsDeleting] = useState(false);

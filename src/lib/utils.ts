@@ -16,9 +16,9 @@ export function formatDate(date: string | Date, formatStr = 'dd/MM/yyyy', locale
   try {
     let dateObj: Date;
     
-    if (typeof date?.toDate === 'function') {
+    if (typeof (date as any)?.toDate === 'function') {
       // Es un Timestamp de Firestore
-      dateObj = date.toDate();
+      dateObj = (date as any).toDate();
     } else if (typeof date === 'string') {
       // Es una cadena de fecha
       dateObj = parseISO(date);

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, AlertCircle, TicketCheck, Users, Gift, Clock, ChevronRight, Plus, Settings, Mail } from 'lucide-react';
+import { CreditCard, AlertCircle, TicketCheck, Gift, Clock, ChevronRight, Plus, Mail } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import ActivityList from '../components/giftcards/ActivityList';
@@ -9,7 +9,7 @@ import GiftcardList from '../components/giftcards/GiftcardList';
 import { useGiftcardStore } from '../stores/giftcardStore';
 import { useActivityStore } from '../stores/activityStore';
 import { useAuthStore } from '../stores/authStore';
-import { daysUntilExpiration, formatDate } from '../lib/utils';
+import { daysUntilExpiration } from '../lib/utils';
 import { Giftcard } from '../types';
 
 const Dashboard = () => {
@@ -91,7 +91,7 @@ const Dashboard = () => {
 
   const handleCardClick = (status: string) => {
     console.log('🔍 Navegando a tarjetas con estado:', status);
-    applyFilters({ status });
+    applyFilters({ status: status as any });
     navigate('/giftcards');
   };
   

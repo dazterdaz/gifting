@@ -3,11 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { 
   Mail, 
   Phone, 
-  User, 
   Calendar, 
   Archive, 
   Eye, 
-  CheckCircle, 
   DollarSign, 
   Home,
   MessageSquare,
@@ -17,11 +15,9 @@ import {
   ExternalLink,
   Star,
   AlertCircle,
-  Trash2,
-  MoreVertical,
   Download
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Select from '../components/ui/Select';
@@ -33,7 +29,6 @@ import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
 
 const ContactMessages = () => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
   const { 
     messages, 
@@ -49,8 +44,6 @@ const ContactMessages = () => {
   const [displayedMessages, setDisplayedMessages] = useState<ContactMessage[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchMessages();

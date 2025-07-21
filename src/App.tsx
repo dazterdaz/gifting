@@ -5,7 +5,6 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import GiftcardsList from './pages/GiftcardsList';
 import GiftcardDetails from './pages/GiftcardDetails';
-import CreateGiftcard from './pages/CreateGiftcard';
 import Settings from './pages/Settings';
 import GlobalActivityPage from './pages/GlobalActivityPage';
 import PublicSearch from './pages/PublicSearch';
@@ -20,7 +19,6 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
 import { initializeUser } from './lib/auth';
-
 function App() {
   const { i18n } = useTranslation();
   const { isAuthenticated, user } = useAuthStore();

@@ -19,8 +19,7 @@ interface SettingsFormData {
 }
 
 const SiteSettings = () => {
-  const { t } = useTranslation();
-  const { settings, updateSettings, uploadLogo } = useSettingsStore();
+  const { settings, updateSettings } = useSettingsStore();
   const { logActivity } = useActivityStore();
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,7 +34,6 @@ const SiteSettings = () => {
     }
   });
 
-  const watchLogoColor = watch('logoColor');
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

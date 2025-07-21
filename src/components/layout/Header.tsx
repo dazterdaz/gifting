@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Sun, Moon, Globe } from 'lucide-react';
+import { Menu, Sun, Moon, Globe } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { logout } from '../../lib/auth';
 import { useAuthStore } from '../../stores/authStore';
-import Button from '../ui/Button';
 
 interface HeaderProps {
   toggleSidebar: () => void;
@@ -33,10 +32,6 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar }) => {
   const handleLogout = async () => {
     await logout();
     navigate('/login');
-  };
-  
-  const toggleLanguage = () => {
-    i18n.changeLanguage(i18n.language === 'es' ? 'en' : 'es');
   };
   
   const toggleDropdown = (e: React.MouseEvent) => {

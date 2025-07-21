@@ -1,6 +1,6 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, LayoutDashboard, Users, X, Settings, Activity, Mail, Globe, Home } from 'lucide-react';
+import { CreditCard, LayoutDashboard, X, Settings, Activity, Mail, Globe, Home } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
