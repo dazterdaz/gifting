@@ -1,24 +1,16 @@
 import { useState } from 'react';
 import { X, Phone, Mail, MessageSquare } from 'lucide-react';
 import { useSettingsStore } from '../../stores/settingsStore';
-import Button from '../ui/Button';
 
 const ContactFooter = () => {
   const { settings } = useSettingsStore();
   const [showPopup, setShowPopup] = useState(false);
 
-  const handleContactClick = () => {
-    setShowPopup(true);
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-  };
-
   const contactInfo = settings.contactInfo || {
     phone: '+56 9 1234 5678',
     whatsapp: '+56 9 1234 5678',
-    email: 'contacto@daztattoo.cl'
+    email: 'contacto@daztattoo.cl',
+    address: 'Santiago, Chile'
   };
 
   return (
@@ -27,7 +19,7 @@ const ContactFooter = () => {
         <p>
           Sistema de Giftcards &copy; {new Date().getFullYear()} | {' '}
           <button
-            onClick={handleContactClick}
+            onClick={() => setShowPopup(true)}
             className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline cursor-pointer"
           >
             ¿Quieres un sistema como este? Da clic aquí
@@ -41,10 +33,10 @@ const ContactFooter = () => {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                💻 Desarrollo de Sistemas
+                📞 Información de Contacto
               </h3>
               <button
-                onClick={handleClosePopup}
+                onClick={() => setShowPopup(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <X className="h-6 w-6" />
@@ -53,8 +45,8 @@ const ContactFooter = () => {
 
             <div className="space-y-4">
               <p className="text-gray-600 dark:text-gray-300 text-center mb-6">
-                ¿Te interesa tener un sistema como este para tu negocio? 
-                Contáctanos para más información.
+                💻 ¿Te interesa tener un sistema como este para tu negocio?<br />
+                Contáctanos para desarrollo de sistemas personalizados.
               </p>
 
               <div className="space-y-3">
@@ -86,6 +78,18 @@ const ContactFooter = () => {
                   </div>
                 </a>
 
+                {contactInfo.address && (
+                  <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900/20 rounded-lg">
+                    <div className="bg-gray-500 rounded-full p-2">
+                      <MessageSquare className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">Dirección</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{contactInfo.address}</p>
+                    </div>
+                  </div>
+                )}
+
                 <a
                   href={`mailto:${contactInfo.email}`}
                   className="flex items-center gap-3 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
@@ -103,19 +107,18 @@ const ContactFooter = () => {
               <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 mt-6">
                 <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                   🚀 Desarrollamos sistemas personalizados para tu negocio<br />
-                  Gestión de inventarios, ventas, clientes y más
+                  Gestión de inventarios, ventas, clientes, giftcards y más
                 </p>
               </div>
             </div>
 
-            <div className="flex justify-center mt-6">
-              <Button
-                onClick={handleClosePopup}
-                variant="outline"
-                className="w-full"
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={() => setShowPopup(false)}
+                className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Cerrar
-              </Button>
+              </button>
             </div>
           </div>
         </div>
