@@ -4,7 +4,7 @@ import { useSettingsStore } from '../../stores/settingsStore';
 
 const ContactFooter = () => {
   const { settings } = useSettingsStore();
-  const [showPopup, setShowPopup] = useState(false);
+  const [showContactInfo, setShowContactInfo] = useState(false);
 
   const contactInfo = settings.contactInfo || {
     phone: '+56 9 1234 5678',
@@ -19,7 +19,7 @@ const ContactFooter = () => {
         <p>
           Sistema de Giftcards &copy; {new Date().getFullYear()} | {' '}
           <button
-            onClick={() => setShowPopup(true)}
+            onClick={() => setShowContactInfo(true)}
             className="text-primary-600 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300 hover:underline cursor-pointer"
           >
             ¿Quieres un sistema como este? Da clic aquí
@@ -28,7 +28,7 @@ const ContactFooter = () => {
       </footer>
 
       {/* Popup de contacto */}
-      {showPopup && (
+      {showContactInfo && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-xl">
             <div className="flex justify-between items-center mb-6">
@@ -36,7 +36,7 @@ const ContactFooter = () => {
                 📞 Información de Contacto
               </h3>
               <button
-                onClick={() => setShowPopup(false)}
+                onClick={() => setShowContactInfo(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               >
                 <X className="h-6 w-6" />
@@ -114,7 +114,7 @@ const ContactFooter = () => {
 
             <div className="flex justify-center mt-4">
               <button
-                onClick={() => setShowPopup(false)}
+                onClick={() => setShowContactInfo(false)}
                 className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
                 Cerrar
