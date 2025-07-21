@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';

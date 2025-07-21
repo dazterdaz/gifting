@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
 import { useGiftcardStore } from '../../stores/giftcardStore';
 import { useActivityStore } from '../../stores/activityStore';
-import { useAuthStore } from '../../stores/authStore';
 import { getCurrentUser } from '../../lib/auth';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -30,6 +29,7 @@ const GiftcardCreateForm: React.FC = () => {
   const navigate = useNavigate();
   const { createGiftcard } = useGiftcardStore();
   const { logActivity } = useActivityStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<GiftcardFormValues>({
     defaultValues: {
       customNumber: '',

@@ -1,4 +1,3 @@
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import SiteSettings from '../components/settings/SiteSettings';
 import TermsEditor from '../components/settings/TermsEditor';

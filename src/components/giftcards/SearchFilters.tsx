@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, CreditCard, Mail, Phone } from 'lucide-react';
-import { GiftcardSearchFilters } from '../../types';
+import { GiftcardSearchFilters, GiftcardStatus } from '../../types';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Button from '../ui/Button';

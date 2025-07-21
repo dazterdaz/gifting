@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import GiftcardsList from './pages/GiftcardsList';
 import GiftcardDetails from './pages/GiftcardDetails';
+import CreateGiftcard from './pages/CreateGiftcard';
 import Settings from './pages/Settings';
 import GlobalActivityPage from './pages/GlobalActivityPage';
 import PublicSearch from './pages/PublicSearch';
