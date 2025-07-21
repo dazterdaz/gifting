@@ -28,7 +28,6 @@ interface GiftcardFormValues {
 const GiftcardCreateForm: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, ensureFirebaseAuth } = useAuthStore();
   const { createGiftcard } = useGiftcardStore();
   const { logActivity } = useActivityStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -60,7 +59,7 @@ const GiftcardCreateForm: React.FC = () => {
     
     setIsSubmitting(true);
     try {
-      const giftcardData = {
+      const giftcardData: any = {
         buyer: {
           name: data.buyerName,
           email: data.buyerEmail,
@@ -77,8 +76,8 @@ const GiftcardCreateForm: React.FC = () => {
       
       // Si se especifica un número personalizado, usarlo
       if (data.customNumber && data.customNumber.trim()) {
-        giftcardData.customNumber = data.customNumber.trim();
-      };
+        (giftcardData as any).customNumber = data.customNumber.trim();
+      }
       
       const newGiftcard = await createGiftcard(giftcardData);
       

@@ -6,7 +6,6 @@ import Dashboard from './pages/Dashboard';
 import GiftcardsList from './pages/GiftcardsList';
 import GiftcardDetails from './pages/GiftcardDetails';
 import CreateGiftcard from './pages/CreateGiftcard';
-import UserManagement from './pages/UserManagement';
 import Settings from './pages/Settings';
 import GlobalActivityPage from './pages/GlobalActivityPage';
 import PublicSearch from './pages/PublicSearch';
@@ -21,7 +20,6 @@ import { useAuthStore } from './stores/authStore';
 import { useSettingsStore } from './stores/settingsStore';
 import { useUserStore } from './stores/userStore';
 import { initializeUser } from './lib/auth';
-import toast from 'react-hot-toast';
 
 function App() {
   const { i18n } = useTranslation();
