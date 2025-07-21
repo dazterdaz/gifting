@@ -177,6 +177,7 @@ export interface Database {
           logo_url: string;
           logo_color: string;
           terms_content?: string;
+          branding_display: 'logo' | 'text' | 'both';
           contact_info?: any;
           testimonials?: any;
           social_links?: any;
@@ -189,6 +190,7 @@ export interface Database {
           logo_url: string;
           logo_color: string;
           terms_content?: string;
+          branding_display?: 'logo' | 'text' | 'both';
           contact_info?: any;
           testimonials?: any;
           social_links?: any;
@@ -201,6 +203,7 @@ export interface Database {
           logo_url?: string;
           logo_color?: string;
           terms_content?: string;
+          branding_display?: 'logo' | 'text' | 'both';
           contact_info?: any;
           testimonials?: any;
           social_links?: any;
