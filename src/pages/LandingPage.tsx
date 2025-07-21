@@ -6,7 +6,7 @@ import {
   FileText, 
   Phone, 
   Mail, 
-  MapPin, 
+  MapPin,
   Instagram, 
   Facebook, 
   Star,
@@ -21,7 +21,8 @@ import {
   Settings,
   X,
   Send,
-  Home
+  Home,
+  MessageSquare
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
