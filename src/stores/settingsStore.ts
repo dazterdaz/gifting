@@ -31,7 +31,7 @@ const defaultTerms: TermsAndConditions = {
 // Configuración por defecto
 const defaultSettings: SiteSettings = {
   siteName: 'Daz Giftcard Register',
-  logoUrl: '/logo.svg',
+  logoUrl: 'https://videos.openai.com/vg-assets/assets%2Ftask_01k0nse4r4f5qr6g4r5wp7sdqn%2F1753078050_img_1.webp?st=2025-07-21T04%3A39%3A12Z&se=2025-07-27T05%3A39%3A12Z&sks=b&skt=2025-07-21T04%3A39%3A12Z&ske=2025-07-27T05%3A39%3A12Z&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skoid=8ebb0df1-a278-4e2e-9c20-f2d373479b3a&skv=2019-02-02&sv=2018-11-09&sr=b&sp=r&spr=https%2Chttp&sig=dX3DzuivNSQm3WK1Db%2B1Fwcpvwgk%2FXqti4mN4CnDUQo%3D&az=oaivgprodscus',
   logoColor: '#4F46E5',
   terms: defaultTerms,
   contactInfo: {
