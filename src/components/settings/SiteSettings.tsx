@@ -49,7 +49,8 @@ const SiteSettings = () => {
       }
 
       if (file.size > 2 * 1024 * 1024) {
-        throw new Error('El archivo es demasiado grande. Máximo 2MB.');
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('El archivo es demasiado grande. Máximo 5MB.');
       }
 
       // Convertir archivo a base64 para almacenamiento local
@@ -141,7 +142,7 @@ const SiteSettings = () => {
                 onChange={handleFileChange}
               />
               <span className="text-sm text-gray-500">
-                Formatos soportados: JPG, PNG, GIF, SVG. Máximo 2MB.
+                Formatos soportados: JPG, PNG, GIF, SVG. Máximo 5MB.
               </span>
             </div>
           </div>
