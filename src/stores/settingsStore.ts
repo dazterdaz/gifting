@@ -35,9 +35,9 @@ const defaultSettings: SiteSettings = {
   logoColor: '#4F46E5',
   terms: defaultTerms,
   contactInfo: {
-    phone: '+56 9 1234 5678',
-    whatsapp: '+56 9 1234 5678',
-    email: 'contacto@daztattoo.cl',
+    phone: '+56920625139',
+    whatsapp: '+56920625139',
+    email: 'Contacto@daz.cl',
     address: 'Santiago, Chile'
   },
   testimonials: [

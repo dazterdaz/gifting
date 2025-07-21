@@ -76,6 +76,14 @@ const SiteConfiguration = () => {
     // Cargar configuración existente si está disponible
     if (settings.contactInfo) {
       setContactInfo(settings.contactInfo);
+    } else {
+      // Si no hay configuración, usar los datos por defecto
+      setContactInfo({
+        phone: '+56920625139',
+        whatsapp: '+56920625139',
+        email: 'Contacto@daz.cl',
+        address: 'Santiago, Chile'
+      });
     }
     if (settings.testimonials) {
       setTestimonials(settings.testimonials);

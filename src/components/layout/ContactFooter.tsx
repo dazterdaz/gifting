@@ -6,10 +6,11 @@ const ContactFooter = () => {
   const { settings } = useSettingsStore();
   const [showContactInfo, setShowContactInfo] = useState(false);
 
+  // Usar la información de contacto actualizada
   const contactInfo = settings.contactInfo || {
-    phone: '+56 9 1234 5678',
-    whatsapp: '+56 9 1234 5678',
-    email: 'contacto@daztattoo.cl',
+    phone: '+56920625139',
+    whatsapp: '+56920625139',
+    email: 'Contacto@daz.cl',
     address: 'Santiago, Chile'
   };
 
