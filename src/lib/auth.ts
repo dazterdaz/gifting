@@ -1,4 +1,5 @@
 import { useAuthStore } from '../stores/authStore';
+import { useActivityStore } from '../stores/activityStore';
 import { User, LoginCredentials } from '../types';
 
 export const login = async ({ usernameOrEmail, password }: LoginCredentials): Promise<{ user: User, token: string } | null> => {
@@ -7,9 +8,9 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
   // Simulating API call delay
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  // Usuario hardcodeado para demo
-  const demoUser = {
-    id: '1',
+  // Usuario hardcodeado para el sistema
+  const systemUser = {
+    id: 'admin-demian',
     username: 'demian',
     email: 'demian.83@hotmail.es',
     password: '@Llamasami1',
@@ -18,11 +19,13 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
   };
   
   console.log('🔍 Verificando credenciales...');
-  console.log('Usuario ingresado:', usernameOrEmail);
-  console.log('Usuario esperado:', demoUser.username);
   
-  // Verificar credenciales (solo username, no email)
-  if (usernameOrEmail.toLowerCase() !== demoUser.username.toLowerCase() || password !== demoUser.password) {
+  // Verificar credenciales (username o email)
+  const isValidUsername = usernameOrEmail.toLowerCase() === systemUser.username.toLowerCase();
+  const isValidEmail = usernameOrEmail.toLowerCase() === systemUser.email.toLowerCase();
+  const isValidPassword = password === systemUser.password;
+  
+  if ((!isValidUsername && !isValidEmail) || !isValidPassword) {
     console.log('❌ Credenciales incorrectas');
     return null;
   }
@@ -30,13 +33,13 @@ export const login = async ({ usernameOrEmail, password }: LoginCredentials): Pr
   console.log('✅ Credenciales correctas');
   
   // Generate mock token
-  const token = `mock-token-${Math.random().toString(36).substring(2, 10)}`;
+  const token = `token-${Math.random().toString(36).substring(2, 10)}-${Date.now()}`;
   
   // Strip password from returned user object
-  const { password: _, ...safeUser } = demoUser;
+  const { password: _, ...safeUser } = systemUser;
   
-  console.log('🎫 Token generado:', token);
-  console.log('👤 Usuario autenticado:', safeUser);
+  console.log('🎫 Token generado');
+  console.log('👤 Usuario autenticado:', safeUser.username);
   
   return { user: safeUser, token };
 };
@@ -46,6 +49,20 @@ export const logout = async (): Promise<void> => {
   
   if (user) {
     console.log('👋 Cerrando sesión para:', user.username);
+    
+    // Registrar logout en actividades si es posible
+    try {
+      const { logActivity } = useActivityStore.getState();
+      await logActivity({
+        userId: user.id,
+        username: user.username,
+        action: 'logout',
+        targetType: 'system',
+        details: `${user.username} cerró sesión`
+      });
+    } catch (activityError) {
+      console.warn('⚠️ Error registrando logout:', activityError);
+    }
   }
   
   useAuthStore.getState().logout();
@@ -62,8 +79,18 @@ export const initializeUser = async (): Promise<void> => {
   }
 };
 
-export const changePassword = async (userId: string, currentPassword: string, newPassword: string): Promise<boolean> => {
+export const changePassword = async (_userId: string, _currentPassword: string, _newPassword: string): Promise<boolean> => {
   // En una aplicación real, esto sería una llamada a la API para actualizar la contraseña
   await new Promise(resolve => setTimeout(resolve, 500));
   return true;
+};
+
+// Función para obtener el usuario actual autenticado
+export const getCurrentUser = (): User | null => {
+  return useAuthStore.getState().user;
+};
+
+// Función para verificar si el usuario está autenticado
+export const isAuthenticated = (): boolean => {
+  return useAuthStore.getState().isAuthenticated;
 };

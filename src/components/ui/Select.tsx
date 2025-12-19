@@ -6,20 +6,23 @@ interface SelectOption {
   label: string;
 }
 
-interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   options: SelectOption[];
   label?: string;
   error?: string;
-  onChange?: (value: string) => void;
+  onValueChange?: (value: string) => void;
   leftAdornment?: React.ReactNode;
   rightAdornment?: React.ReactNode;
 }
 
 const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  ({ className, options, label, error, onChange, leftAdornment, rightAdornment, id, ...props }, ref) => {
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-      if (onChange) {
-        onChange(e.target.value);
+  ({ className, options, label, error, onValueChange, leftAdornment, rightAdornment, id, ...props }, ref) => {
+    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      if (onValueChange) {
+        onValueChange(e.target.value);
+      }
+      if (props.onChange) {
+        props.onChange(e);
       }
     };
 
@@ -53,7 +56,7 @@ const Select = forwardRef<HTMLSelectElement, SelectProps>(
               error && 'border-error-300 focus:border-error-500 focus:ring-error-500',
               className
             )}
-            onChange={handleChange}
+            onChange={handleSelectChange}
             {...props}
           >
             {options.map((option) => (

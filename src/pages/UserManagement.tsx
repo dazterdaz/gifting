@@ -1,12 +1,10 @@
 import { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { useUserStore } from '../stores/userStore';
 import { useAuthStore } from '../stores/authStore';
 import { formatDate } from '../lib/utils';
 
 const UserManagement = () => {
-  const { t } = useTranslation();
   const { users, fetchUsers, loading } = useUserStore();
   const { user: currentUser } = useAuthStore();
   

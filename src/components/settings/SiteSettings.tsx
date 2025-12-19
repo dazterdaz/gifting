@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
 import { Save, Upload } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../ui/Card';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import Select from '../ui/Select';
 import { useSettingsStore } from '../../stores/settingsStore';
 import { useActivityStore } from '../../stores/activityStore';
 import { useAuthStore } from '../../stores/authStore';
@@ -14,30 +14,31 @@ interface SettingsFormData {
   siteName: string;
   logoUrl: string;
   logoColor: string;
+  brandingDisplay: 'logo' | 'text' | 'both';
 }
 
 const SiteSettings = () => {
-  const { t } = useTranslation();
-  const { settings, updateSettings, uploadLogo } = useSettingsStore();
+  const { settings, updateSettings } = useSettingsStore();
   const { logActivity } = useActivityStore();
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<SettingsFormData>({
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<SettingsFormData>({
     defaultValues: {
       siteName: settings.siteName,
       logoUrl: settings.logoUrl,
-      logoColor: settings.logoColor
+      logoColor: settings.logoColor,
+      brandingDisplay: settings.brandingDisplay
     }
   });
 
-  const watchLogoColor = watch('logoColor');
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setIsSubmitting(true);
     try {
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/svg+xml'];
       if (!allowedTypes.includes(file.type)) {
@@ -47,13 +48,36 @@ const SiteSettings = () => {
       if (file.size > 2 * 1024 * 1024) {
         throw new Error('El archivo es demasiado grande. Máximo 2MB.');
       }
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('El archivo es demasiado grande. Máximo 5MB.');
+      }
 
-      const logoUrl = await uploadLogo(file);
-      updateSettings({ logoUrl });
-      toast.success('Logo subido correctamente');
+      // Convertir archivo a base64 para almacenamiento local
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const logoUrl = event.target?.result as string;
+        
+        // Actualizar configuración con el nuevo logo
+        await updateSettings({ logoUrl });
+        
+        // Actualizar el formulario
+        setValue('logoUrl', logoUrl);
+        
+        toast.success('Logo actualizado correctamente');
+        setIsSubmitting(false);
+      };
+      
+      reader.onerror = () => {
+        toast.error('Error al procesar la imagen');
+        setIsSubmitting(false);
+      };
+      
+      reader.readAsDataURL(file);
+      
     } catch (error) {
       console.error('Error uploading logo:', error);
       toast.error(error instanceof Error ? error.message : 'Error al subir el logo');
+      setIsSubmitting(false);
     }
   };
 
@@ -129,21 +153,38 @@ const SiteSettings = () => {
             error={errors.logoColor?.message}
           />
           
+          <Select
+            label="Mostrar en Landing Page"
+            options={[
+              { value: 'logo', label: 'Solo Logo' },
+              { value: 'text', label: 'Solo Texto' },
+              { value: 'both', label: 'Logo + Texto' }
+            ]}
+            {...register('brandingDisplay')}
+          />
+          
           <div className="mt-4">
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
               Vista previa:
             </p>
             <div className="p-4 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
-              <img
-                src={settings.logoUrl}
-                alt="Logo preview"
-                className="h-12 w-auto"
-                style={{ filter: `brightness(0) saturate(100%) ${settings.logoUrl === '/logo.svg' ? `invert(42%) sepia(93%) saturate(1352%) hue-rotate(227deg) brightness(90%) contrast(119%)` : ''}` }}
-                onError={(e) => {
-                  e.currentTarget.src = '/logo.svg';
-                  toast.error('Error al cargar el logo');
-                }}
-              />
+              <div className="flex items-center space-x-3">
+                {(watch('brandingDisplay') === 'logo' || watch('brandingDisplay') === 'both') && (
+                  <img
+                    src={watch('logoUrl') || settings.logoUrl}
+                    alt="Logo preview"
+                    className="h-12 w-auto"
+                    onError={(e) => {
+                      e.currentTarget.src = '/logo.svg';
+                    }}
+                  />
+                )}
+                {(watch('brandingDisplay') === 'text' || watch('brandingDisplay') === 'both') && (
+                  <span className="text-xl font-bold" style={{ color: watch('logoColor') }}>
+                    {watch('siteName') || settings.siteName}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </CardContent>

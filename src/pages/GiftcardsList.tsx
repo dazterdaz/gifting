@@ -16,7 +16,6 @@ const GiftcardsList = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { 
-    giftcards, 
     filteredGiftcards, 
     loading, 
     fetchGiftcards, 
@@ -28,7 +27,12 @@ const GiftcardsList = () => {
   const [displayedGiftcards, setDisplayedGiftcards] = useState(filteredGiftcards);
   
   useEffect(() => {
-    fetchGiftcards();
+    const loadGiftcards = async () => {
+      console.log('📋 Cargando lista de giftcards...');
+      await fetchGiftcards();
+    };
+    
+    loadGiftcards();
   }, []);
   
   useEffect(() => {

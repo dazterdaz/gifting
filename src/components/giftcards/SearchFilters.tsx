@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, X, CreditCard, Mail, Phone } from 'lucide-react';
-import { GiftcardSearchFilters } from '../../types';
+import { GiftcardSearchFilters, GiftcardStatus } from '../../types';
 import Input from '../ui/Input';
 import Select from '../ui/Select';
 import Button from '../ui/Button';
@@ -9,7 +9,7 @@ import Button from '../ui/Button';
 interface SearchFiltersProps {
   onSearch: (filters: GiftcardSearchFilters) => void;
   onClear: () => void;
-  initialStatus?: string;
+  initialStatus?: GiftcardStatus;
 }
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({ onSearch, onClear, initialStatus }) => {
@@ -68,7 +68,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ onSearch, onClear, initia
           <Select
             options={statusOptions}
             value={filters.status || ''}
-            onChange={value => handleInputChange('status', value)}
+            onValueChange={value => handleInputChange('status', value as GiftcardStatus)}
           />
         </div>
         

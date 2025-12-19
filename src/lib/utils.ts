@@ -13,8 +13,37 @@ export function cn(...inputs: ClassValue[]) {
 
 // Format dates with localization
 export function formatDate(date: string | Date, formatStr = 'dd/MM/yyyy', locale = 'es'): string {
-  const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  return format(dateObj, formatStr, { locale: locale === 'es' ? es : enUS });
+  try {
+    let dateObj: Date;
+    
+    if (typeof (date as any)?.toDate === 'function') {
+      // Es un Timestamp de Firestore
+      dateObj = (date as any).toDate();
+    } else if (typeof date === 'string') {
+      // Es una cadena de fecha
+      dateObj = parseISO(date);
+      // Verificar si la fecha es válida
+      if (isNaN(dateObj.getTime())) {
+        console.warn('⚠️ Fecha inválida recibida:', date);
+        return 'Fecha inválida';
+      }
+    } else if (date instanceof Date) {
+      // Ya es un objeto Date
+      dateObj = date;
+      if (isNaN(dateObj.getTime())) {
+        console.warn('⚠️ Objeto Date inválido:', date);
+        return 'Fecha inválida';
+      }
+    } else {
+      console.warn('⚠️ Tipo de fecha no reconocido:', typeof date, date);
+      return 'Fecha inválida';
+    }
+
+    return format(dateObj, formatStr, { locale: locale === 'es' ? es : enUS });
+  } catch (error) {
+    console.error('❌ Error formateando fecha:', error, 'Fecha original:', date);
+    return 'Error en fecha';
+  }
 }
 
 // Format currency for Chilean pesos
@@ -68,11 +97,30 @@ export function translateStatus(status: GiftcardStatus, locale = 'es'): string {
 // Generate a random unique numeric code
 export function generateGiftcardNumber(existingNumbers: string[]): string {
   let number: string;
+  let attempts = 0;
+  const maxAttempts = 50;
+  
   do {
-    // Generar un número aleatorio entre 0 y 99999999
-    const randomNum = Math.floor(Math.random() * 100000000);
-    number = String(randomNum).padStart(8, '0');
+    attempts++;
+    
+    // Generar un número aleatorio de 8 dígitos
+    const randomNum = Math.floor(Math.random() * 90000000) + 10000000;
+    number = String(randomNum);
+    
+    // Si no hay números existentes, usar el primer número generado
+    if (!existingNumbers || existingNumbers.length === 0) {
+      break;
+    }
+    
+    // Si después de muchos intentos, usar el número actual
+    if (attempts >= maxAttempts) {
+      console.warn('⚠️ Máximo de intentos alcanzado, usando número:', number);
+      break;
+    }
+    
   } while (existingNumbers.includes(number));
+  
+  console.log(`🔢 Número generado en ${attempts} intentos:`, number);
   
   return number;
 }
@@ -133,34 +181,66 @@ export function exportToPDF(giftcards: Giftcard[], locale = 'es'): void {
 export function exportToCSV(giftcards: Giftcard[], locale = 'es'): void {
   // Define headers
   const headers = locale === 'es'
-    ? ['Número', 'Estado', 'Comprador', 'Destinatario', 'Monto', 'Fecha creación', 'Fecha vencimiento']
-    : ['Number', 'Status', 'Buyer', 'Recipient', 'Amount', 'Creation Date', 'Expiration Date'];
+    ? [
+        'Número', 'Estado', 'Monto',
+        'Comprador - Nombre', 'Comprador - Email', 'Comprador - Teléfono',
+        'Destinatario - Nombre', 'Destinatario - Email', 'Destinatario - Teléfono',
+        'Fecha Creación', 'Fecha Entrega', 'Fecha Vencimiento', 'Fecha Cobro', 'Fecha Anulación',
+        'Artista', 'Notas'
+      ]
+    : [
+        'Number', 'Status', 'Amount',
+        'Buyer - Name', 'Buyer - Email', 'Buyer - Phone',
+        'Recipient - Name', 'Recipient - Email', 'Recipient - Phone',
+        'Creation Date', 'Delivery Date', 'Expiration Date', 'Redeemed Date', 'Cancelled Date',
+        'Artist', 'Notes'
+      ];
   
   // Prepare data
   const data = giftcards.map(g => [
     g.number,
     translateStatus(g.status, locale),
-    g.buyer.name,
-    g.recipient.name,
     g.amount,
+    // Datos del comprador
+    g.buyer.name,
+    g.buyer.email,
+    g.buyer.phone,
+    // Datos del destinatario
+    g.recipient.name,
+    g.recipient.email,
+    g.recipient.phone,
+    // Fechas
     formatDate(g.createdAt, 'dd/MM/yyyy', locale),
-    g.expiresAt ? formatDate(g.expiresAt, 'dd/MM/yyyy', locale) : ''
+    g.deliveredAt ? formatDate(g.deliveredAt, 'dd/MM/yyyy', locale) : '',
+    g.expiresAt ? formatDate(g.expiresAt, 'dd/MM/yyyy', locale) : '',
+    g.redeemedAt ? formatDate(g.redeemedAt, 'dd/MM/yyyy', locale) : '',
+    g.cancelledAt ? formatDate(g.cancelledAt, 'dd/MM/yyyy', locale) : '',
+    // Información adicional
+    g.artist || '',
+    g.notes || ''
   ]);
   
   // Create CSV content
   const csvContent = [
     headers.join(','),
-    ...data.map(row => row.map(cell => `"${cell}"`).join(','))
+    ...data.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
   ].join('\n');
   
   // Create download link
-  const encodedUri = encodeURI('data:text/csv;charset=utf-8,' + csvContent);
+  const BOM = '\uFEFF'; // Byte Order Mark para UTF-8
+  const csvWithBOM = BOM + csvContent;
+  const blob = new Blob([csvWithBOM], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
   const link = document.createElement('a');
-  link.setAttribute('href', encodedUri);
-  link.setAttribute('download', locale === 'es' ? 'giftcards.csv' : 'giftcards.csv');
+  link.href = url;
+  link.download = locale === 'es' 
+    ? `giftcards-completo-${new Date().toISOString().split('T')[0]}.csv`
+    : `giftcards-complete-${new Date().toISOString().split('T')[0]}.csv`;
   document.body.appendChild(link);
   
   // Trigger download and remove link
   link.click();
   document.body.removeChild(link);
+  URL.revokeObjectURL(url);
 }

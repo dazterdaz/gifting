@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Save, Plus, Trash, Edit, Home } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
 import Button from '../components/ui/Button';
@@ -26,7 +25,6 @@ interface SocialLink {
 }
 
 const SiteConfiguration = () => {
-  const { t } = useTranslation();
   const { settings, updateSettings } = useSettingsStore();
   const { user } = useAuthStore();
   const { logActivity } = useActivityStore();
@@ -76,6 +74,14 @@ const SiteConfiguration = () => {
     // Cargar configuración existente si está disponible
     if (settings.contactInfo) {
       setContactInfo(settings.contactInfo);
+    } else {
+      // Si no hay configuración, usar los datos por defecto
+      setContactInfo({
+        phone: '+56920625139',
+        whatsapp: '+56920625139',
+        email: 'Contacto@daz.cl',
+        address: 'Santiago, Chile'
+      });
     }
     if (settings.testimonials) {
       setTestimonials(settings.testimonials);

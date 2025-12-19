@@ -1,6 +1,6 @@
 import { useLocation, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { CreditCard, LayoutDashboard, Users, X, Settings, Activity, Mail, Globe, Home } from 'lucide-react';
+import { CreditCard, LayoutDashboard, X, Settings, Activity, Mail, Globe, Home } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../stores/authStore';
 import { useSettingsStore } from '../../stores/settingsStore';
@@ -93,20 +93,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, closeSidebar }) => 
           
           {user?.role === 'superadmin' && (
             <>
-              <Link
-                to="/usuarios"
-                className={cn(
-                  'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
-                  isActive('/usuarios')
-                    ? 'bg-primary-800 text-white'
-                    : 'text-primary-100 hover:bg-primary-800 hover:text-white'
-                )}
-                onClick={isMobile ? closeSidebar : undefined}
-              >
-                <Users className="mr-3 h-5 w-5" />
-                {t('layout.sidebar.users')}
-              </Link>
-
               <Link
                 to="/mensajes"
                 className={cn(

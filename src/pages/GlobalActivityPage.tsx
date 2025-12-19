@@ -1,9 +1,7 @@
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../stores/authStore';
 import GlobalActivity from '../components/activity/GlobalActivity';
 
 const GlobalActivityPage = () => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
 
   if (user?.role !== 'superadmin') {

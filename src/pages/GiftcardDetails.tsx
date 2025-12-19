@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Clock, Edit, Printer, Gift, RefreshCw, Pencil } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/Card';
+import { ArrowLeft, Clock, Edit, Printer, Gift, RefreshCw } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import StatusBadge from '../components/ui/StatusBadge';
 import ActivityList from '../components/giftcards/ActivityList';
@@ -243,7 +243,7 @@ const GiftcardDetails = () => {
             
             <div className="p-6 border-t border-gray-200 dark:border-gray-700 print:hidden">
               <div className="flex flex-wrap gap-2 justify-end">
-                {(selectedGiftcard.status === 'created' || selectedGiftcard.status === 'delivered') && (
+                {(selectedGiftcard.status === 'created_not_delivered' || selectedGiftcard.status === 'delivered') && (
                   <Button 
                     variant="primary"
                     leftIcon={<Edit className="h-4 w-4" />}
